@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
+import '../../../core/services/invoice_service.dart';
 
 class SalesScreen extends StatefulWidget {
   const SalesScreen({super.key});
@@ -112,8 +113,22 @@ class _SalesScreenState extends State<SalesScreen> {
             ),
             const SizedBox(height: 16),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.print, color: AppColors.primary),
+                      tooltip: 'Print Invoice',
+                      onPressed: () => InvoiceService().printInvoice(sale),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.share, color: AppColors.primary),
+                      tooltip: 'Share Invoice',
+                      onPressed: () => InvoiceService().shareInvoice(sale),
+                    ),
+                  ],
+                ),
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
               ],
             ),

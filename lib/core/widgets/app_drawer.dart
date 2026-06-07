@@ -38,6 +38,7 @@ class AppDrawer extends StatelessWidget {
             ),
           ),
           _drawerItem(context, Icons.dashboard, 'Dashboard', AppRouter.dashboard),
+          _drawerItem(context, Icons.bar_chart, 'Reports', AppRouter.reports),
           _drawerItem(context, Icons.medication, 'Inventory', AppRouter.inventory),
           _drawerItem(context, Icons.shopping_cart, 'Sales', AppRouter.sales),
           _drawerItem(context, Icons.people, 'Suppliers', AppRouter.suppliers),

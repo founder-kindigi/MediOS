@@ -11,4 +11,6 @@ class AppRouter {
   static const String newPurchaseOrder = '/purchase-orders/new';
   static const String transactions = '/transactions';
   static const String customerDetail = '/customers/detail';
+  static const String reports = '/reports';
+  static const String stockAdjustment = '/inventory/adjust';
 }

@@ -49,7 +49,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventory')),
+      appBar: AppBar(
+        title: const Text('Inventory'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.compare_arrows),
+            tooltip: 'Stock Adjustment',
+            onPressed: () => Navigator.pushNamed(context, AppRouter.stockAdjustment),
+          ),
+        ],
+      ),
       drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.pushNamed(context, '${AppRouter.inventory}/add'),
