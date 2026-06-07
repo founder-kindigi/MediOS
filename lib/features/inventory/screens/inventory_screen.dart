@@ -53,6 +53,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
         title: const Text('Inventory'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: 'Scan Barcode',
+            onPressed: () => Navigator.pushNamed(context, AppRouter.barcodeScan),
+          ),
+          IconButton(
             icon: const Icon(Icons.compare_arrows),
             tooltip: 'Stock Adjustment',
             onPressed: () => Navigator.pushNamed(context, AppRouter.stockAdjustment),
@@ -166,6 +171,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
             _detailRow('Generic Name', medicine.genericName),
             _detailRow('Manufacturer', medicine.manufacturer),
             _detailRow('Category', medicine.categoryName ?? '-'),
+            if (medicine.barcode != null && medicine.barcode!.isNotEmpty)
+              _detailRow('Barcode', medicine.barcode!),
             _detailRow('Purchase Price', Helpers.formatCurrency(medicine.purchasePrice)),
             _detailRow('Selling Price', Helpers.formatCurrency(medicine.sellingPrice)),
             _detailRow('Stock', '${medicine.stockQuantity} ${medicine.unit}'),

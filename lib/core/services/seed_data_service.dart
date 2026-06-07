@@ -26,6 +26,7 @@ class SeedDataService {
               'generic_name': p['generic_name'] as String? ?? '',
               'manufacturer': p['manufacturer'] as String? ?? '',
               'unit': 'strip',
+              'barcode': p['barcode'] as String?,
               'purchase_price': (p['purchase_price'] as num?)?.toDouble() ?? 0,
               'selling_price': (p['selling_price'] as num?)?.toDouble() ?? 0,
               'stock_quantity': 0,

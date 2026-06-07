@@ -13,6 +13,7 @@ import 'features/inventory/screens/add_medicine_screen.dart';
 import 'features/inventory/screens/transaction_history_screen.dart';
 import 'features/inventory/screens/stock_adjustment_screen.dart';
 import 'features/inventory/screens/expiry_management_screen.dart';
+import 'features/inventory/screens/barcode_scan_screen.dart';
 import 'features/inventory/services/inventory_service.dart';
 import 'features/sales/screens/sales_screen.dart';
 import 'features/sales/screens/new_sale_screen.dart';
@@ -74,6 +75,7 @@ class MediOSApp extends StatelessWidget {
           '${AppRouter.inventory}/add': (ctx) => AddMedicineScreen(medicine: ModalRoute.of(ctx)?.settings.arguments as MedicineModel?),
           AppRouter.stockAdjustment: (_) => const StockAdjustmentScreen(),
           AppRouter.expiryManagement: (_) => const ExpiryManagementScreen(),
+          AppRouter.barcodeScan: (_) => const BarcodeScanScreen(),
           AppRouter.returns: (_) => const ReturnsHistoryScreen(),
           AppRouter.newReturn: (_) => const NewReturnScreen(),
           AppRouter.sales: (_) => const SalesScreen(),

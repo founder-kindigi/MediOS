@@ -142,7 +142,8 @@ class InventoryService extends ChangeNotifier {
         m.name.toLowerCase().contains(q) ||
         m.genericName.toLowerCase().contains(q) ||
         (m.categoryName?.toLowerCase().contains(q) ?? false) ||
-        m.manufacturer.toLowerCase().contains(q)
+        m.manufacturer.toLowerCase().contains(q) ||
+        (m.barcode?.toLowerCase().contains(q) ?? false)
     ).toList();
   }
 

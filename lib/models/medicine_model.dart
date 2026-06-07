@@ -11,6 +11,7 @@ class MedicineModel {
   final int stockQuantity;
   final int reorderLevel;
   final DateTime? expiryDate;
+  final String? barcode;
   final String? description;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -28,6 +29,7 @@ class MedicineModel {
     this.stockQuantity = 0,
     this.reorderLevel = 10,
     this.expiryDate,
+    this.barcode,
     this.description,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -47,6 +49,7 @@ class MedicineModel {
       'stock_quantity': stockQuantity,
       'reorder_level': reorderLevel,
       'expiry_date': expiryDate?.toIso8601String(),
+      'barcode': barcode,
       'description': description,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -69,6 +72,7 @@ class MedicineModel {
       expiryDate: map['expiry_date'] != null
           ? DateTime.parse(map['expiry_date'] as String)
           : null,
+      barcode: map['barcode'] as String?,
       description: map['description'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
@@ -82,7 +86,7 @@ class MedicineModel {
       expiryDate!.difference(DateTime.now()).inDays <= 30 &&
       !isExpired;
 
-  MedicineModel copyWith({int? stockQuantity, double? sellingPrice, int? reorderLevel}) {
+  MedicineModel copyWith({int? stockQuantity, double? sellingPrice, int? reorderLevel, String? barcode}) {
     return MedicineModel(
       id: id,
       name: name,
@@ -96,6 +100,7 @@ class MedicineModel {
       stockQuantity: stockQuantity ?? this.stockQuantity,
       reorderLevel: reorderLevel ?? this.reorderLevel,
       expiryDate: expiryDate,
+      barcode: barcode ?? this.barcode,
       description: description,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
