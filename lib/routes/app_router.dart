@@ -15,6 +15,7 @@ class AppRouter {
   static const String stockAdjustment = '/inventory/adjust';
   static const String expiryManagement = '/inventory/expiry';
   static const String barcodeScan = '/inventory/scan';
+  static const String settings = '/settings';
   static const String returns = '/returns';
   static const String newReturn = '/returns/new';
 }

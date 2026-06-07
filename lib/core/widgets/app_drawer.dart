@@ -50,6 +50,8 @@ class AppDrawer extends StatelessWidget {
           if (auth.isAdmin)
             _drawerItem(context, Icons.people_outline, 'Users', AppRouter.users),
           const Divider(),
+          _drawerItem(context, Icons.settings, 'Settings', AppRouter.settings),
+          const Divider(),
           _drawerItem(context, Icons.logout, 'Logout', null, onTap: () {
             auth.logout();
             Navigator.pushReplacementNamed(context, AppRouter.login);

@@ -28,6 +28,8 @@ import 'features/purchase_orders/screens/new_purchase_order_screen.dart';
 import 'features/purchase_orders/services/purchase_order_service.dart';
 import 'features/reports/screens/reports_screen.dart';
 import 'features/reports/services/reports_service.dart';
+import 'features/settings/screens/settings_screen.dart';
+import 'features/settings/services/settings_service.dart';
 import 'features/returns/screens/new_return_screen.dart';
 import 'features/returns/screens/returns_history_screen.dart';
 import 'features/returns/services/return_service.dart';
@@ -62,6 +64,7 @@ class MediOSApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PurchaseOrderService()),
         ChangeNotifierProvider(create: (_) => ReportsService()),
         ChangeNotifierProvider(create: (_) => ReturnService()),
+        ChangeNotifierProvider(create: (_) => SettingsService()),
       ],
       child: MaterialApp(
         title: 'MediOS',
@@ -76,6 +79,7 @@ class MediOSApp extends StatelessWidget {
           AppRouter.stockAdjustment: (_) => const StockAdjustmentScreen(),
           AppRouter.expiryManagement: (_) => const ExpiryManagementScreen(),
           AppRouter.barcodeScan: (_) => const BarcodeScanScreen(),
+          AppRouter.settings: (_) => const SettingsScreen(),
           AppRouter.returns: (_) => const ReturnsHistoryScreen(),
           AppRouter.newReturn: (_) => const NewReturnScreen(),
           AppRouter.sales: (_) => const SalesScreen(),
