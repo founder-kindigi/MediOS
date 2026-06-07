@@ -41,6 +41,8 @@ class AppDrawer extends StatelessWidget {
           _drawerItem(context, Icons.medication, 'Inventory', AppRouter.inventory),
           _drawerItem(context, Icons.shopping_cart, 'Sales', AppRouter.sales),
           _drawerItem(context, Icons.people, 'Suppliers', AppRouter.suppliers),
+          _drawerItem(context, Icons.receipt_long, 'Purchase Orders', AppRouter.purchaseOrders),
+          _drawerItem(context, Icons.swap_vert, 'Transactions', AppRouter.transactions),
           _drawerItem(context, Icons.person, 'Customers', AppRouter.customers),
           if (auth.isAdmin)
             _drawerItem(context, Icons.people_outline, 'Users', AppRouter.users),

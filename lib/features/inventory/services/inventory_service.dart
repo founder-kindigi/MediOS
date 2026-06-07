@@ -105,12 +105,20 @@ class InventoryService extends ChangeNotifier {
   }
 
   Future<List<InventoryTransactionModel>> getTransactionHistory(
-      {int? medicineId}) async {
+      {int? medicineId, String? type}) async {
     String? where;
     List<dynamic>? whereArgs;
+    final conditions = <String>[];
     if (medicineId != null) {
-      where = 'medicine_id = ?';
+      conditions.add('medicine_id = ?');
       whereArgs = [medicineId];
+    }
+    if (type != null && type != 'all') {
+      conditions.add('type = ?');
+      (whereArgs ??= []).add(type);
+    }
+    if (conditions.isNotEmpty) {
+      where = conditions.join(' AND ');
     }
     final maps = await _db.query('inventory_transactions',
         where: where, whereArgs: whereArgs, orderBy: 'created_at DESC');

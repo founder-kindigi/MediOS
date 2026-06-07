@@ -103,7 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(width: 12),
             _actionButton(context, 'Add Medicine', Icons.medication, '${AppRouter.inventory}/add'),
             const SizedBox(width: 12),
-            _actionButton(context, 'New Order', Icons.add_business, '${AppRouter.suppliers}/order'),
+            _actionButton(context, 'New Order', Icons.add_business, AppRouter.newPurchaseOrder),
           ],
         ),
       ],

@@ -166,6 +166,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '${AppRouter.inventory}/add', arguments: medicine);
+                  },
+                  child: const Text('Edit'),
+                ),
+                const SizedBox(width: 8),
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
               ],
             ),

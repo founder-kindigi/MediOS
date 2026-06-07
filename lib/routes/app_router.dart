@@ -7,4 +7,8 @@ class AppRouter {
   static const String suppliers = '/suppliers';
   static const String customers = '/customers';
   static const String users = '/users';
+  static const String purchaseOrders = '/purchase-orders';
+  static const String newPurchaseOrder = '/purchase-orders/new';
+  static const String transactions = '/transactions';
+  static const String customerDetail = '/customers/detail';
 }

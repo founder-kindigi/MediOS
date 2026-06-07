@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/search_bar_widget.dart';
 import '../../../models/customer_model.dart';
+import '../../../routes/app_router.dart';
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
@@ -75,15 +76,19 @@ class _CustomersScreenState extends State<CustomersScreen> {
                                 title: Text(customer.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                                 subtitle: Text('${customer.phone}\n${customer.email ?? ''}'),
                                 trailing: PopupMenuButton(
+                                  icon: const Icon(Icons.more_vert),
                                   itemBuilder: (context) => [
-                                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                                    const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                                    const PopupMenuItem(value: 'view', child: Row(children: [Icon(Icons.visibility, size: 18), SizedBox(width: 8), Text('View')])),
+                                    const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('Edit')])),
+                                    const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 18), SizedBox(width: 8), Text('Delete')])),
                                   ],
                                   onSelected: (v) {
+                                    if (v == 'view') Navigator.pushNamed(context, AppRouter.customerDetail, arguments: customer);
                                     if (v == 'edit') _showCustomerForm(customer: customer);
                                     if (v == 'delete') _deleteCustomer(customer);
                                   },
                                 ),
+                                onTap: () => Navigator.pushNamed(context, AppRouter.customerDetail, arguments: customer),
                               ),
                             );
                           },
