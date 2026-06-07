@@ -27,6 +27,9 @@ import 'features/purchase_orders/screens/new_purchase_order_screen.dart';
 import 'features/purchase_orders/services/purchase_order_service.dart';
 import 'features/reports/screens/reports_screen.dart';
 import 'features/reports/services/reports_service.dart';
+import 'features/returns/screens/new_return_screen.dart';
+import 'features/returns/screens/returns_history_screen.dart';
+import 'features/returns/services/return_service.dart';
 import 'models/medicine_model.dart';
 import 'models/customer_model.dart';
 import 'routes/app_router.dart';
@@ -57,6 +60,7 @@ class MediOSApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DashboardService()),
         ChangeNotifierProvider(create: (_) => PurchaseOrderService()),
         ChangeNotifierProvider(create: (_) => ReportsService()),
+        ChangeNotifierProvider(create: (_) => ReturnService()),
       ],
       child: MaterialApp(
         title: 'MediOS',
@@ -70,6 +74,8 @@ class MediOSApp extends StatelessWidget {
           '${AppRouter.inventory}/add': (ctx) => AddMedicineScreen(medicine: ModalRoute.of(ctx)?.settings.arguments as MedicineModel?),
           AppRouter.stockAdjustment: (_) => const StockAdjustmentScreen(),
           AppRouter.expiryManagement: (_) => const ExpiryManagementScreen(),
+          AppRouter.returns: (_) => const ReturnsHistoryScreen(),
+          AppRouter.newReturn: (_) => const NewReturnScreen(),
           AppRouter.sales: (_) => const SalesScreen(),
           AppRouter.newSale: (_) => const NewSaleScreen(),
           AppRouter.suppliers: (_) => const SuppliersScreen(),

@@ -14,4 +14,6 @@ class AppRouter {
   static const String reports = '/reports';
   static const String stockAdjustment = '/inventory/adjust';
   static const String expiryManagement = '/inventory/expiry';
+  static const String returns = '/returns';
+  static const String newReturn = '/returns/new';
 }
