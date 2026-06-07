@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 class Helpers {
   static String formatCurrency(double amount) {
     final format = NumberFormat.currency(
-      symbol: '₹',
+      symbol: '₨',
       decimalDigits: 2,
     );
     return format.format(amount);

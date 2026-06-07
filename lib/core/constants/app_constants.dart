@@ -4,7 +4,7 @@ class AppConstants {
   static const String dbName = 'medios.db';
   static const int dbVersion = 1;
 
-  static const String defaultCurrency = '₹';
+  static const String defaultCurrency = '₨';
   static const int lowStockThreshold = 10;
   static const int nearExpiryDays = 30;
 }
