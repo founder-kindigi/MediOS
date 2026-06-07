@@ -11,6 +11,7 @@ class DashboardService extends ChangeNotifier {
   int _expiredCount = 0;
   int _totalSuppliers = 0;
   int _totalCustomers = 0;
+  Map<String, double> _weeklyRevenue = {};
   bool _isLoading = false;
 
   double get totalRevenue => _totalRevenue;
@@ -20,6 +21,7 @@ class DashboardService extends ChangeNotifier {
   int get expiredCount => _expiredCount;
   int get totalSuppliers => _totalSuppliers;
   int get totalCustomers => _totalCustomers;
+  Map<String, double> get weeklyRevenue => _weeklyRevenue;
   bool get isLoading => _isLoading;
 
   Future<void> loadDashboard() async {
@@ -39,8 +41,26 @@ class DashboardService extends ChangeNotifier {
         where: 'expiry_date IS NOT NULL AND expiry_date < ?',
         whereArgs: [now.toIso8601String()]);
 
+    _weeklyRevenue = await _calcWeeklyRevenue();
+
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<Map<String, double>> _calcWeeklyRevenue() async {
+    final result = <String, double>{};
+    final now = DateTime.now();
+    for (int i = 6; i >= 0; i--) {
+      final day = now.subtract(Duration(days: i));
+      final start = DateTime(day.year, day.month, day.day);
+      final end = start.add(const Duration(days: 1));
+      final key = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day.weekday - 1];
+      final revenue = await _db.getSum('sales', 'net_amount',
+          where: 'sale_date >= ? AND sale_date < ?',
+          whereArgs: [start.toIso8601String(), end.toIso8601String()]);
+      result[key] = revenue;
+    }
+    return result;
   }
 
   Future<Map<String, double>> getMonthlyRevenue() async {
