@@ -11,7 +11,10 @@ class DashboardService extends ChangeNotifier {
   int _expiredCount = 0;
   int _totalSuppliers = 0;
   int _totalCustomers = 0;
+  double _todayRevenue = 0;
+  int _todaySalesCount = 0;
   Map<String, double> _weeklyRevenue = {};
+  List<Map<String, dynamic>> _recentSales = [];
   bool _isLoading = false;
 
   double get totalRevenue => _totalRevenue;
@@ -21,7 +24,10 @@ class DashboardService extends ChangeNotifier {
   int get expiredCount => _expiredCount;
   int get totalSuppliers => _totalSuppliers;
   int get totalCustomers => _totalCustomers;
+  double get todayRevenue => _todayRevenue;
+  int get todaySalesCount => _todaySalesCount;
   Map<String, double> get weeklyRevenue => _weeklyRevenue;
+  List<Map<String, dynamic>> get recentSales => _recentSales;
   bool get isLoading => _isLoading;
 
   Future<void> loadDashboard() async {
@@ -35,6 +41,13 @@ class DashboardService extends ChangeNotifier {
     _totalCustomers = await _db.getCount('customers');
 
     final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+
+    _todayRevenue = await _db.getSum('sales', 'net_amount',
+        where: 'sale_date >= ?', whereArgs: [todayStart.toIso8601String()]);
+    _todaySalesCount = await _db.getCount('sales',
+        where: 'sale_date >= ?', whereArgs: [todayStart.toIso8601String()]);
+
     _lowStockCount = await _db.getCount('medicines',
         where: 'stock_quantity <= reorder_level');
     _expiredCount = await _db.getCount('medicines',
@@ -42,6 +55,7 @@ class DashboardService extends ChangeNotifier {
         whereArgs: [now.toIso8601String()]);
 
     _weeklyRevenue = await _calcWeeklyRevenue();
+    _recentSales = await _loadRecentSales();
 
     _isLoading = false;
     notifyListeners();
@@ -61,6 +75,13 @@ class DashboardService extends ChangeNotifier {
       result[key] = revenue;
     }
     return result;
+  }
+
+  Future<List<Map<String, dynamic>>> _loadRecentSales() async {
+    final db = await _db.database;
+    return await db.rawQuery(
+      'SELECT bill_number, customer_name, net_amount, sale_date FROM sales ORDER BY created_at DESC LIMIT 5',
+    );
   }
 
   Future<Map<String, double>> getMonthlyRevenue() async {
