@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/sales_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 import '../../../core/services/invoice_service.dart';
@@ -29,7 +28,6 @@ class _SalesScreenState extends State<SalesScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Sales History')),
-      drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.pushNamed(context, AppRouter.newSale),
         child: const Icon(Icons.add),

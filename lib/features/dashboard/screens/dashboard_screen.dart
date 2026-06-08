@@ -4,7 +4,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../services/dashboard_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 
@@ -32,7 +31,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text('Welcome, ${user?.fullName ?? 'User'}')),
-      drawer: const AppDrawer(),
       body: dashboard.isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

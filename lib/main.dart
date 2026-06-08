@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
+import 'core/widgets/main_shell.dart';
 import 'features/dashboard/screens/admin_users_screen.dart';
 import 'features/dashboard/services/dashboard_service.dart';
 import 'features/inventory/screens/inventory_screen.dart';
@@ -87,7 +88,7 @@ class MediOSApp extends StatelessWidget {
         initialRoute: AppRouter.login,
         routes: {
           AppRouter.login: (_) => const LoginScreen(),
-          AppRouter.dashboard: (_) => const DashboardScreen(),
+          AppRouter.dashboard: (_) => const MainShell(initialIndex: 0),
           AppRouter.inventory: (_) => const InventoryScreen(),
           '${AppRouter.inventory}/add': (ctx) => AddMedicineScreen(medicine: ModalRoute.of(ctx)?.settings.arguments as MedicineModel?),
           AppRouter.stockAdjustment: (_) => const StockAdjustmentScreen(),

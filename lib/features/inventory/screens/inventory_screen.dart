@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/inventory_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
@@ -64,7 +63,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         ],
       ),
-      drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.pushNamed(context, '${AppRouter.inventory}/add'),
         child: const Icon(Icons.add),
