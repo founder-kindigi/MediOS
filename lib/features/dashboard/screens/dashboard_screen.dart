@@ -5,6 +5,7 @@ import '../services/dashboard_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/widgets/animated_list_item.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
@@ -377,29 +378,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           )
         else
-          ...sales.map((s) => _saleRow(s)),
+          ...sales.asMap().entries.map((e) => _saleRow(e.value, index: e.key)),
       ],
     );
   }
 
-  Widget _saleRow(Map<String, dynamic> sale) {
+  Widget _saleRow(Map<String, dynamic> sale, {int index = 0}) {
     final amount = (sale['net_amount'] as num?)?.toDouble() ?? 0;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        dense: true,
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+    return AnimatedListItem(
+      index: index,
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        child: ListTile(
+          dense: true,
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            ),
+            child: const Icon(Icons.receipt_rounded, color: AppColors.primary, size: 18),
           ),
-          child: const Icon(Icons.receipt_rounded, color: AppColors.primary, size: 18),
+          title: Text(sale['bill_number'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+          subtitle: Text(sale['customer_name'] as String? ?? 'Walk-in', style: const TextStyle(fontSize: 12)),
+          trailing: Text(Helpers.formatCurrency(amount),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.success)),
         ),
-        title: Text(sale['bill_number'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-        subtitle: Text(sale['customer_name'] as String? ?? 'Walk-in', style: const TextStyle(fontSize: 12)),
-        trailing: Text(Helpers.formatCurrency(amount),
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.success)),
       ),
     );
   }

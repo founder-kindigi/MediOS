@@ -6,6 +6,7 @@ import '../../../core/constants/app_dimensions.dart';
 import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/widgets/animated_list_item.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 
@@ -118,8 +119,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           itemCount: medicines.length,
                           itemBuilder: (context, index) {
                             final medicine = medicines[index];
-                            return Card(
-                              child: ListTile(
+                            return AnimatedListItem(
+                              index: index,
+                              child: Card(
+                                key: ValueKey(medicine.id),
+                                child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: medicine.isLowStock
                                       ? AppColors.warning.withValues(alpha: 0.2)
@@ -145,7 +149,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 ),
                                 onTap: () => _showMedicineDetail(medicine),
                               ),
-                            );
+                            ),
+                          );
                           },
                         ),
                       ),

@@ -4,6 +4,7 @@ import '../services/sales_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/widgets/animated_list_item.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 import '../../../core/services/invoice_service.dart';
@@ -51,8 +52,10 @@ class _SalesScreenState extends State<SalesScreen> {
                     itemCount: salesService.sales.length,
                     itemBuilder: (context, index) {
                       final sale = salesService.sales[index];
-                      return Card(
-                        child: ListTile(
+                      return AnimatedListItem(
+                        index: index,
+                        child: Card(
+                          child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                             child: const Icon(Icons.receipt, color: AppColors.primary),
@@ -74,7 +77,8 @@ class _SalesScreenState extends State<SalesScreen> {
                           ),
                           onTap: () => _showSaleDetail(sale.id!),
                         ),
-                      );
+                      ),
+                    );
                     },
                   ),
                 ),

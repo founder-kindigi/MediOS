@@ -47,6 +47,7 @@ import 'features/returns/services/return_service.dart';
 import 'models/medicine_model.dart';
 import 'models/customer_model.dart';
 import 'routes/app_router.dart';
+import 'routes/app_transitions.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,33 +87,64 @@ class MediOSApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         initialRoute: AppRouter.login,
-        routes: {
-          AppRouter.login: (_) => const LoginScreen(),
-          AppRouter.dashboard: (_) => const MainShell(initialIndex: 0),
-          AppRouter.inventory: (_) => const InventoryScreen(),
-          '${AppRouter.inventory}/add': (ctx) => AddMedicineScreen(medicine: ModalRoute.of(ctx)?.settings.arguments as MedicineModel?),
-          AppRouter.stockAdjustment: (_) => const StockAdjustmentScreen(),
-          AppRouter.expiryManagement: (_) => const ExpiryManagementScreen(),
-          AppRouter.barcodeScan: (_) => const BarcodeScanScreen(),
-          AppRouter.cameraScan: (_) => const CameraBarcodeScreen(),
-          AppRouter.stores: (_) => const StoreListScreen(),
-          AppRouter.prescriptions: (_) => const PrescriptionListScreen(),
-          '/prescriptions/new': (_) => const NewPrescriptionScreen(),
-          AppRouter.orders: (_) => const OrderListScreen(),
-          '/orders/new': (_) => const NewOrderScreen(),
-          AppRouter.settings: (_) => const SettingsScreen(),
-          AppRouter.returns: (_) => const ReturnsHistoryScreen(),
-          AppRouter.newReturn: (_) => const NewReturnScreen(),
-          AppRouter.sales: (_) => const SalesScreen(),
-          AppRouter.newSale: (_) => const NewSaleScreen(),
-          AppRouter.suppliers: (_) => const SuppliersScreen(),
-          AppRouter.customers: (_) => const CustomersScreen(),
-          AppRouter.customerDetail: (ctx) => CustomerDetailScreen(customer: ModalRoute.of(ctx)?.settings.arguments as CustomerModel),
-          AppRouter.transactions: (_) => const TransactionHistoryScreen(),
-          AppRouter.reports: (_) => const ReportsScreen(),
-          AppRouter.purchaseOrders: (_) => const PurchaseOrdersScreen(),
-          AppRouter.newPurchaseOrder: (_) => const NewPurchaseOrderScreen(),
-          AppRouter.users: (_) => const AdminUsersScreen(),
+        onGenerateRoute: (settings) {
+          final args = settings.arguments;
+          switch (settings.name) {
+            case AppRouter.login:
+              return buildRoute(settings, const LoginScreen(), transition: PageTransition.fade);
+            case AppRouter.dashboard:
+              return buildRoute(settings, const MainShell(initialIndex: 0));
+            case AppRouter.inventory:
+              return buildRoute(settings, const InventoryScreen());
+            case '${AppRouter.inventory}/add':
+              return buildRoute(settings, AddMedicineScreen(medicine: args as MedicineModel?), transition: PageTransition.slideUp);
+            case AppRouter.stockAdjustment:
+              return buildRoute(settings, const StockAdjustmentScreen(), transition: PageTransition.slideUp);
+            case AppRouter.expiryManagement:
+              return buildRoute(settings, const ExpiryManagementScreen());
+            case AppRouter.barcodeScan:
+              return buildRoute(settings, const BarcodeScanScreen());
+            case AppRouter.cameraScan:
+              return buildRoute(settings, const CameraBarcodeScreen());
+            case AppRouter.stores:
+              return buildRoute(settings, const StoreListScreen());
+            case AppRouter.prescriptions:
+              return buildRoute(settings, const PrescriptionListScreen());
+            case '/prescriptions/new':
+              return buildRoute(settings, const NewPrescriptionScreen(), transition: PageTransition.slideUp);
+            case AppRouter.orders:
+              return buildRoute(settings, const OrderListScreen());
+            case '/orders/new':
+              return buildRoute(settings, const NewOrderScreen(), transition: PageTransition.slideUp);
+            case AppRouter.settings:
+              return buildRoute(settings, const SettingsScreen());
+            case AppRouter.returns:
+              return buildRoute(settings, const ReturnsHistoryScreen());
+            case AppRouter.newReturn:
+              return buildRoute(settings, const NewReturnScreen(), transition: PageTransition.slideUp);
+            case AppRouter.sales:
+              return buildRoute(settings, const SalesScreen());
+            case AppRouter.newSale:
+              return buildRoute(settings, const NewSaleScreen(), transition: PageTransition.slideUp);
+            case AppRouter.suppliers:
+              return buildRoute(settings, const SuppliersScreen());
+            case AppRouter.customers:
+              return buildRoute(settings, const CustomersScreen());
+            case AppRouter.customerDetail:
+              return buildRoute(settings, CustomerDetailScreen(customer: args as CustomerModel));
+            case AppRouter.transactions:
+              return buildRoute(settings, const TransactionHistoryScreen());
+            case AppRouter.reports:
+              return buildRoute(settings, const ReportsScreen());
+            case AppRouter.purchaseOrders:
+              return buildRoute(settings, const PurchaseOrdersScreen());
+            case AppRouter.newPurchaseOrder:
+              return buildRoute(settings, const NewPurchaseOrderScreen(), transition: PageTransition.slideUp);
+            case AppRouter.users:
+              return buildRoute(settings, const AdminUsersScreen());
+            default:
+              return MaterialPageRoute(settings: settings, builder: (_) => const SizedBox());
+          }
         },
       ),
     );

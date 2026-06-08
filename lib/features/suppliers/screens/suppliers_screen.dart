@@ -7,6 +7,7 @@ import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
+import '../../../core/widgets/animated_list_item.dart';
 import '../../../models/supplier_model.dart';
 
 class SuppliersScreen extends StatefulWidget {
@@ -77,8 +78,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                           itemCount: suppliers.length,
                           itemBuilder: (context, index) {
                             final supplier = suppliers[index];
-                            return Card(
-                              child: ListTile(
+                            return AnimatedListItem(
+                              index: index,
+                              child: Card(
+                                child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                                   child: const Icon(Icons.business, color: AppColors.primary),
@@ -96,6 +99,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                                   },
                                 ),
                               ),
+                            ),
                             );
                           },
                         ),
