@@ -4,6 +4,7 @@ import '../services/inventory_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
+import '../../../core/utils/validators.dart';
 import '../../../models/medicine_model.dart';
 
 class StockAdjustmentScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class StockAdjustmentScreen extends StatefulWidget {
 }
 
 class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _searchCtrl = TextEditingController();
   final _qtyCtrl = TextEditingController();
   MedicineModel? _selectedMedicine;
@@ -31,16 +33,13 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
 
   Future<void> _save() async {
     if (_selectedMedicine == null) {
-      _showError('Select a medicine');
+      AppSnackbar.showError(context, 'Select a medicine');
       return;
     }
-    final qty = int.tryParse(_qtyCtrl.text);
-    if (qty == null || qty <= 0) {
-      _showError('Enter a valid quantity');
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
+    final qty = int.parse(_qtyCtrl.text);
     if (_adjustmentType == 'out' && qty > _selectedMedicine!.stockQuantity) {
-      _showError('Not enough stock (available: ${_selectedMedicine!.stockQuantity})');
+      AppSnackbar.showError(context, 'Not enough stock (available: ${_selectedMedicine!.stockQuantity})');
       return;
     }
 
@@ -59,10 +58,6 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
     }
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
-
   @override
   Widget build(BuildContext context) {
     final inventory = context.watch<InventoryService>();
@@ -72,7 +67,9 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Stock Adjustment')),
-      body: ListView(
+      body: Form(
+        key: _formKey,
+        child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           if (_selectedMedicine == null) ...[
@@ -136,6 +133,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
             controller: _qtyCtrl,
             decoration: const InputDecoration(labelText: 'Quantity *'),
             keyboardType: TextInputType.number,
+            validator: (v) => Validators.positiveNumber(v, 'Quantity'),
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
@@ -155,6 +153,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

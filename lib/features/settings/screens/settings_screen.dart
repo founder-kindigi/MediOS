@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../services/settings_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
+import '../../../core/utils/validators.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/services/biometric_auth_service.dart';
 
@@ -236,26 +238,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             trailing: const Icon(Icons.edit),
                             onTap: () async {
                               final ctrl = TextEditingController(text: rate.toString());
+                              final formKey = GlobalKey<FormState>();
                               final result = await showDialog<double>(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Default Tax Rate'),
-                                  content: TextField(
-                                    controller: ctrl,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(labelText: 'Tax Rate (%)'),
+                                  content: Form(
+                                    key: formKey,
+                                    child: TextFormField(
+                                      controller: ctrl,
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(labelText: 'Tax Rate (%)'),
+                                      validator: (v) => Validators.positiveNumber(v, 'Tax rate'),
+                                    ),
                                   ),
                                   actions: [
                                     TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                                     ElevatedButton(onPressed: () {
-                                      final v = double.tryParse(ctrl.text);
-                                      Navigator.pop(ctx, v);
+                                      if (!formKey.currentState!.validate()) return;
+                                      Navigator.pop(ctx, double.tryParse(ctrl.text));
                                     }, child: const Text('Save')),
                                   ],
                                 ),
                               );
                               if (result != null && mounted) {
                                 await settings.setDefaultTaxRate(result);
+                                AppSnackbar.showSuccess(context, 'Tax rate updated');
                                 setState(() {});
                               }
                             },
@@ -354,40 +362,44 @@ class _CouponSectionState extends State<_CouponSection> {
     final codeCtrl = TextEditingController();
     final valueCtrl = TextEditingController(text: '10');
     final minCtrl = TextEditingController(text: '0');
+    final formKey = GlobalKey<FormState>();
     String type = 'percentage';
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           title: const Text('Add Coupon'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: codeCtrl, decoration: const InputDecoration(labelText: 'Coupon Code'), autofocus: true),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: type,
-                decoration: const InputDecoration(labelText: 'Type'),
-                items: const [
-                  DropdownMenuItem(value: 'percentage', child: Text('Percentage')),
-                  DropdownMenuItem(value: 'flat', child: Text('Flat Amount')),
-                ],
-                onChanged: (v) => setDialogState(() => type = v ?? 'percentage'),
-              ),
-              const SizedBox(height: 8),
-              TextField(controller: valueCtrl, decoration: InputDecoration(labelText: type == 'percentage' ? 'Discount %' : 'Discount Amount'), keyboardType: TextInputType.number),
-              const SizedBox(height: 8),
-              TextField(controller: minCtrl, decoration: const InputDecoration(labelText: 'Min Purchase'), keyboardType: TextInputType.number),
-            ],
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(controller: codeCtrl, decoration: const InputDecoration(labelText: 'Coupon Code'), autofocus: true, validator: (v) => Validators.required(v, 'Coupon code')),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: type,
+                  decoration: const InputDecoration(labelText: 'Type'),
+                  items: const [
+                    DropdownMenuItem(value: 'percentage', child: Text('Percentage')),
+                    DropdownMenuItem(value: 'flat', child: Text('Flat Amount')),
+                  ],
+                  onChanged: (v) => setDialogState(() => type = v ?? 'percentage'),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(controller: valueCtrl, decoration: InputDecoration(labelText: type == 'percentage' ? 'Discount %' : 'Discount Amount'), keyboardType: TextInputType.number, validator: (v) => Validators.positiveNumber(v, 'Discount value')),
+                const SizedBox(height: 8),
+                TextFormField(controller: minCtrl, decoration: const InputDecoration(labelText: 'Min Purchase'), keyboardType: TextInputType.number, validator: (v) => v != null && v.isNotEmpty ? Validators.positiveNumber(v, 'Min purchase') : null),
+              ],
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+            ElevatedButton(onPressed: () { if (formKey.currentState!.validate()) Navigator.pop(ctx, true); }, child: const Text('Save')),
           ],
         ),
       ),
     );
-    if (result == true && codeCtrl.text.trim().isNotEmpty) {
+    if (result == true) {
       await widget.settings.addCoupon({
         'code': codeCtrl.text.trim().toUpperCase(),
         'type': type,
@@ -395,6 +407,7 @@ class _CouponSectionState extends State<_CouponSection> {
         'min_purchase': double.tryParse(minCtrl.text) ?? 0,
         'is_active': true,
       });
+      AppSnackbar.showSuccess(context, 'Coupon added');
       _load();
     }
   }

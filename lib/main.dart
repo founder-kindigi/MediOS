@@ -6,7 +6,6 @@ import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/dashboard/screens/dashboard_screen.dart';
 import 'core/widgets/main_shell.dart';
 import 'features/dashboard/screens/admin_users_screen.dart';
 import 'features/dashboard/services/dashboard_service.dart';

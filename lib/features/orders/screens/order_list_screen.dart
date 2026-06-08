@@ -179,7 +179,7 @@ class _OrderDetailSheet extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         service.updateStatus(order.id!, 'fulfilled');
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order fulfilled')));
+                        AppSnackbar.showSuccess(context, 'Order fulfilled');
                         Navigator.pop(ctx);
                       },
                       icon: const Icon(Icons.check_circle),
@@ -192,7 +192,7 @@ class _OrderDetailSheet extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         service.updateStatus(order.id!, 'cancelled');
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order cancelled')));
+                        AppSnackbar.showWarning(context, 'Order cancelled');
                         Navigator.pop(ctx);
                       },
                       icon: const Icon(Icons.cancel),

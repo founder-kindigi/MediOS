@@ -4,6 +4,8 @@ import '../../auth/services/auth_service.dart';
 import '../../../models/user_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
+import '../../../core/widgets/app_snackbar.dart';
+import '../../../core/utils/validators.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({super.key});
@@ -26,48 +28,57 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add User'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: usernameCtrl, decoration: const InputDecoration(labelText: 'Username *')),
-                TextField(controller: passwordCtrl, decoration: const InputDecoration(labelText: 'Password *'), obscureText: true),
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name *')),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: role,
-                  decoration: const InputDecoration(labelText: 'Role'),
-                  items: const [
-                    DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                    DropdownMenuItem(value: 'pharmacist', child: Text('Pharmacist')),
+      builder: (context) {
+        final formKey = GlobalKey<FormState>();
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Add User'),
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(controller: usernameCtrl, decoration: const InputDecoration(labelText: 'Username *'), validator: (v) => Validators.required(v, 'Username')),
+                    TextFormField(controller: passwordCtrl, decoration: const InputDecoration(labelText: 'Password *'), obscureText: true, validator: (v) => Validators.required(v, 'Password')),
+                    TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name *'), validator: (v) => Validators.required(v, 'Full name')),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: role,
+                      decoration: const InputDecoration(labelText: 'Role'),
+                      items: const [
+                        DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                        DropdownMenuItem(value: 'pharmacist', child: Text('Pharmacist')),
+                      ],
+                      onChanged: (v) => setDialogState(() => role = v ?? 'pharmacist'),
+                    ),
                   ],
-                  onChanged: (v) => setDialogState(() => role = v ?? 'pharmacist'),
                 ),
-              ],
+              ),
             ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () async {
+                  if (!formKey.currentState!.validate()) return;
+                  final auth = context.read<AuthService>();
+                  await auth.createUser(UserModel(
+                    username: usernameCtrl.text,
+                    passwordHash: passwordCtrl.text,
+                    fullName: nameCtrl.text,
+                    role: role,
+                  ));
+                  if (context.mounted) {
+                    AppSnackbar.showSuccess(context, 'User created successfully');
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Add'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () async {
-                if (usernameCtrl.text.isEmpty || passwordCtrl.text.isEmpty || nameCtrl.text.isEmpty) return;
-                final auth = context.read<AuthService>();
-                await auth.createUser(UserModel(
-                  username: usernameCtrl.text,
-                  passwordHash: passwordCtrl.text,
-                  fullName: nameCtrl.text,
-                  role: role,
-                ));
-                if (context.mounted) Navigator.pop(context);
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 

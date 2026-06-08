@@ -8,6 +8,7 @@ import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/animated_list_item.dart';
+import '../../../core/utils/validators.dart';
 import '../../../models/supplier_model.dart';
 
 class SuppliersScreen extends StatefulWidget {
@@ -119,47 +120,53 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(supplier == null ? 'Add Supplier' : 'Edit Supplier'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *')),
-              TextField(controller: contactCtrl, decoration: const InputDecoration(labelText: 'Contact Person')),
-              TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone *')),
-              TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
-              TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address'), maxLines: 2),
-            ],
+      builder: (context) {
+        final formKey = GlobalKey<FormState>();
+        return AlertDialog(
+          title: Text(supplier == null ? 'Add Supplier' : 'Edit Supplier'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *'), validator: (v) => Validators.required(v, 'Name')),
+                  TextFormField(controller: contactCtrl, decoration: const InputDecoration(labelText: 'Contact Person')),
+                  TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone *'), validator: (v) => Validators.phone(v)),
+                  TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email'), validator: (v) => v != null && v.isNotEmpty ? Validators.email(v) : null),
+                  TextFormField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address'), maxLines: 2),
+                ],
+              ),
+            ),
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameCtrl.text.isEmpty || phoneCtrl.text.isEmpty) return;
-              final svc = context.read<SupplierService>();
-              final model = SupplierModel(
-                id: supplier?.id,
-                name: nameCtrl.text,
-                contactPerson: contactCtrl.text,
-                phone: phoneCtrl.text,
-                email: emailCtrl.text,
-                address: addressCtrl.text,
-              );
-              if (supplier == null) {
-                await svc.addSupplier(model);
-                if (context.mounted) AppSnackbar.showSuccess(context, 'Supplier added successfully');
-              } else {
-                await svc.updateSupplier(model);
-                if (context.mounted) AppSnackbar.showSuccess(context, 'Supplier updated successfully');
-              }
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: Text(supplier == null ? 'Add' : 'Update'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                final svc = context.read<SupplierService>();
+                final model = SupplierModel(
+                  id: supplier?.id,
+                  name: nameCtrl.text,
+                  contactPerson: contactCtrl.text,
+                  phone: phoneCtrl.text,
+                  email: emailCtrl.text,
+                  address: addressCtrl.text,
+                );
+                if (supplier == null) {
+                  await svc.addSupplier(model);
+                  if (context.mounted) AppSnackbar.showSuccess(context, 'Supplier added successfully');
+                } else {
+                  await svc.updateSupplier(model);
+                  if (context.mounted) AppSnackbar.showSuccess(context, 'Supplier updated successfully');
+                }
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: Text(supplier == null ? 'Add' : 'Update'),
+            ),
+          ],
+        );
+      },
     );
   }
 

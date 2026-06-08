@@ -6,6 +6,7 @@ import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
+import '../../../core/utils/validators.dart';
 import '../../../models/store_model.dart';
 
 class StoreListScreen extends StatefulWidget {
@@ -28,27 +29,32 @@ class _StoreListScreenState extends State<StoreListScreen> {
     final nameCtrl = TextEditingController();
     final addressCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Add Store'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Store Name', prefixIcon: Icon(Icons.store)), autofocus: true),
-            const SizedBox(height: 8),
-            TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address', prefixIcon: Icon(Icons.location_on))),
-            const SizedBox(height: 8),
-            TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone))),
-          ],
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Store Name', prefixIcon: Icon(Icons.store)), autofocus: true, validator: (v) => Validators.required(v, 'Store name')),
+              const SizedBox(height: 8),
+              TextFormField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address', prefixIcon: Icon(Icons.location_on))),
+              const SizedBox(height: 8),
+              TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone)), validator: (v) => v != null && v.isNotEmpty ? Validators.phone(v) : null),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          ElevatedButton(onPressed: () { if (formKey.currentState!.validate()) Navigator.pop(ctx, true); }, child: const Text('Save')),
         ],
       ),
     );
-    if (result == true && nameCtrl.text.trim().isNotEmpty) {
+    if (result == true) {
       await context.read<StoreService>().addStore(
         StoreModel(name: nameCtrl.text.trim(), address: addressCtrl.text.trim(), phone: phoneCtrl.text.trim()),
       );

@@ -7,6 +7,7 @@ import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
+import '../../../core/utils/validators.dart';
 import '../../../models/customer_model.dart';
 import '../../../routes/app_router.dart';
 
@@ -119,45 +120,51 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(customer == null ? 'Add Customer' : 'Edit Customer'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *')),
-              TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone *')),
-              TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
-              TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address'), maxLines: 2),
-            ],
+      builder: (context) {
+        final formKey = GlobalKey<FormState>();
+        return AlertDialog(
+          title: Text(customer == null ? 'Add Customer' : 'Edit Customer'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *'), validator: (v) => Validators.required(v, 'Name')),
+                  TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone *'), validator: (v) => Validators.phone(v)),
+                  TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email'), validator: (v) => v != null && v.isNotEmpty ? Validators.email(v) : null),
+                  TextFormField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address'), maxLines: 2),
+                ],
+              ),
+            ),
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameCtrl.text.isEmpty || phoneCtrl.text.isEmpty) return;
-              final svc = context.read<CustomerService>();
-              final model = CustomerModel(
-                id: customer?.id,
-                name: nameCtrl.text,
-                phone: phoneCtrl.text,
-                email: emailCtrl.text,
-                address: addressCtrl.text,
-              );
-              if (customer == null) {
-                await svc.addCustomer(model);
-                if (context.mounted) AppSnackbar.showSuccess(context, 'Customer added successfully');
-              } else {
-                await svc.updateCustomer(model);
-                if (context.mounted) AppSnackbar.showSuccess(context, 'Customer updated successfully');
-              }
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: Text(customer == null ? 'Add' : 'Update'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                final svc = context.read<CustomerService>();
+                final model = CustomerModel(
+                  id: customer?.id,
+                  name: nameCtrl.text,
+                  phone: phoneCtrl.text,
+                  email: emailCtrl.text,
+                  address: addressCtrl.text,
+                );
+                if (customer == null) {
+                  await svc.addCustomer(model);
+                  if (context.mounted) AppSnackbar.showSuccess(context, 'Customer added successfully');
+                } else {
+                  await svc.updateCustomer(model);
+                  if (context.mounted) AppSnackbar.showSuccess(context, 'Customer updated successfully');
+                }
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: Text(customer == null ? 'Add' : 'Update'),
+            ),
+          ],
+        );
+      },
     );
   }
 
