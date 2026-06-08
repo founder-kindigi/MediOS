@@ -9,6 +9,7 @@ import '../../../core/utils/helpers.dart';
 import '../../../core/utils/validators.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/services/biometric_auth_service.dart';
+import '../../../core/providers/theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -122,6 +123,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                       ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('Appearance',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Card(
+                  child: Consumer<ThemeProvider>(
+                    builder: (context, tp, _) => ListTile(
+                      leading: const Icon(Icons.dark_mode, color: AppColors.primary),
+                      title: const Text('Theme'),
+                      trailing: SegmentedButton<ThemeMode>(
+                        segments: const [
+                          ButtonSegment(value: ThemeMode.system, label: Text('System')),
+                          ButtonSegment(value: ThemeMode.light, label: Text('Light')),
+                          ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+                        ],
+                        selected: {tp.mode},
+                        onSelectionChanged: (v) => tp.setMode(v.first),
+                        style: const ButtonStyle(
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
                     ),
                   ),
                 ),

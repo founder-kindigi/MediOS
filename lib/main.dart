@@ -4,6 +4,7 @@ import 'core/database/database_helper.dart';
 import 'core/services/seed_data_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/providers/theme_provider.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'core/widgets/main_shell.dart';
@@ -57,16 +58,20 @@ void main() async {
   } catch (e) {
     debugPrint('Database init error: $e');
   }
-  runApp(const MediOSApp());
+  final themeProvider = ThemeProvider();
+  await themeProvider.load();
+  runApp(MediOSApp(themeProvider: themeProvider));
 }
 
 class MediOSApp extends StatelessWidget {
-  const MediOSApp({super.key});
+  final ThemeProvider themeProvider;
+  const MediOSApp({super.key, required this.themeProvider});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: themeProvider),
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => InventoryService()),
         ChangeNotifierProvider(create: (_) => SalesService()),
@@ -81,10 +86,13 @@ class MediOSApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OrderService()),
         ChangeNotifierProvider(create: (_) => SettingsService()),
       ],
-      child: MaterialApp(
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) => MaterialApp(
         title: 'MediOS',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeProvider.mode,
         initialRoute: AppRouter.login,
         onGenerateRoute: (settings) {
           final args = settings.arguments;
@@ -145,6 +153,7 @@ class MediOSApp extends StatelessWidget {
               return MaterialPageRoute(settings: settings, builder: (_) => const SizedBox());
           }
         },
+      ),
       ),
     );
   }
