@@ -143,7 +143,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       childAspectRatio: 1.2,
       children: [
         _miniCard('Today', Helpers.formatCurrency(_salesSummary!['today'] ?? 0), AppColors.primary),
-        _miniCard('This Week', Helpers.formatCurrency(_salesSummary!['week'] ?? 0), AppColors.accent),
+        _miniCard('This Week', Helpers.formatCurrency(_salesSummary!['week'] ?? 0), AppColors.secondary),
         _miniCard('This Month', Helpers.formatCurrency(_salesSummary!['month'] ?? 0), AppColors.success),
         _miniCard('Total', Helpers.formatCurrency(_salesSummary!['total'] ?? 0), Colors.orange),
       ],
@@ -271,7 +271,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           childAspectRatio: 1.3,
           children: [
             _miniCard('Total Items', '${stats['totalMedicines']}', AppColors.primary),
-            _miniCard('Stock Qty', '${stats['totalStockQty']}', AppColors.accent),
+            _miniCard('Stock Qty', '${stats['totalStockQty']}', AppColors.secondary),
             _miniCard('Stock Value', Helpers.formatCurrency(stats['totalValue']), AppColors.success),
             _miniCard('Low Stock', '${stats['lowStock']}', AppColors.warning),
             _miniCard('Out of Stock', '${stats['outOfStock']}', AppColors.error),

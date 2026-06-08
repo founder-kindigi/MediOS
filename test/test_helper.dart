@@ -40,6 +40,7 @@ Future<Database> createAndSetTestDb() async {
   DatabaseHelper.setTestDatabase(db);
   final now = DateTime.now().toIso8601String();
   await db.insert('stores', {'name': 'Main Store', 'address': '', 'phone': '', 'is_active': 1});
+  await db.execute("INSERT INTO categories (name, description, created_at) VALUES ('Tablet', 'Solid dosage forms', ?), ('Capsule', 'Gelatin encapsulated medicines', ?), ('Syrup', 'Liquid oral medicines', ?), ('Injection', 'Injectable medicines', ?), ('Ointment', 'Topical applications', ?), ('Drop', 'Eye/ear/nasal drops', ?)", [now, now, now, now, now, now]);
   await db.insert('users', {'username': 'admin', 'password_hash': 'admin123', 'full_name': 'Administrator', 'role': 'admin', 'created_at': now});
   return db;
 }

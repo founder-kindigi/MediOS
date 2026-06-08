@@ -63,7 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       childAspectRatio: 1.5,
       children: [
         _summaryCard('Total Revenue', Helpers.formatCurrency(dashboard.totalRevenue), Icons.trending_up, AppColors.primary),
-        _summaryCard('Total Sales', '${dashboard.totalSales}', Icons.receipt, AppColors.accent),
+        _summaryCard('Total Sales', '${dashboard.totalSales}', Icons.receipt, AppColors.secondary),
         _summaryCard('Medicines', '${dashboard.totalMedicines}', Icons.medication, AppColors.success),
         _summaryCard('Suppliers', '${dashboard.totalSuppliers}', Icons.people, Colors.orange),
         _summaryCard('Customers', '${dashboard.totalCustomers}', Icons.person, Colors.purple),

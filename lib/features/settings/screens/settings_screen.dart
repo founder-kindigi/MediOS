@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         builder: (ctx, snap) {
                           final lastSync = snap.data;
                           return ListTile(
-                            leading: const Icon(Icons.sync, color: AppColors.accent),
+                            leading: const Icon(Icons.sync, color: AppColors.secondary),
                             title: const Text('Last Sync'),
                             subtitle: Text(lastSync != null
                                 ? DateTime.parse(lastSync).toLocal().toString().substring(0, 19)
@@ -285,7 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       const Divider(height: 1),
                       ListTile(
-                        leading: const Icon(Icons.table_chart, color: AppColors.accent),
+                        leading: const Icon(Icons.table_chart, color: AppColors.secondary),
                         title: const Text('Export Medicines as CSV'),
                         subtitle: const Text('Share medicine catalog as spreadsheet'),
                         trailing: settings.isProcessing
@@ -405,7 +405,7 @@ class _CouponSectionState extends State<_CouponSection> {
     return Column(
       children: [
         ListTile(
-          leading: const Icon(Icons.local_offer, color: AppColors.accent),
+          leading: const Icon(Icons.local_offer, color: AppColors.secondary),
           title: Text('Coupons (${_coupons.length})'),
           subtitle: const Text('Manage discount coupons'),
           trailing: IconButton(icon: const Icon(Icons.add_circle), onPressed: _add),
