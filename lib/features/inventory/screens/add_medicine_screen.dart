@@ -20,6 +20,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
   final _manufacturerCtrl = TextEditingController();
   final _purchasePriceCtrl = TextEditingController();
   final _sellingPriceCtrl = TextEditingController();
+  final _wholesalePriceCtrl = TextEditingController();
   final _stockCtrl = TextEditingController();
   final _reorderCtrl = TextEditingController();
   final _barcodeCtrl = TextEditingController();
@@ -50,6 +51,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
     _manufacturerCtrl.text = m.manufacturer;
     _purchasePriceCtrl.text = m.purchasePrice.toString();
     _sellingPriceCtrl.text = m.sellingPrice.toString();
+    _wholesalePriceCtrl.text = m.wholesalePrice.toString();
     _stockCtrl.text = m.stockQuantity.toString();
     _reorderCtrl.text = m.reorderLevel.toString();
     _barcodeCtrl.text = m.barcode ?? '';
@@ -66,6 +68,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
     _manufacturerCtrl.dispose();
     _purchasePriceCtrl.dispose();
     _sellingPriceCtrl.dispose();
+    _wholesalePriceCtrl.dispose();
     _stockCtrl.dispose();
     _reorderCtrl.dispose();
     _barcodeCtrl.dispose();
@@ -86,6 +89,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
       unit: _unit,
       purchasePrice: double.parse(_purchasePriceCtrl.text),
       sellingPrice: double.parse(_sellingPriceCtrl.text),
+      wholesalePrice: double.tryParse(_wholesalePriceCtrl.text) ?? 0,
       stockQuantity: int.parse(_stockCtrl.text),
       reorderLevel: int.parse(_reorderCtrl.text),
       expiryDate: _expiryDate,
@@ -169,6 +173,12 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _wholesalePriceCtrl,
+                decoration: const InputDecoration(labelText: 'Wholesale Price'),
+                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 12),
               Row(

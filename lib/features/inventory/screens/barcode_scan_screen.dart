@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../services/inventory_service.dart';
 import '../../../core/constants/app_colors.dart';
@@ -52,7 +53,23 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan Barcode')),
+      appBar: AppBar(
+        title: const Text('Scan Barcode'),
+        actions: [
+          if (!kIsWeb)
+            IconButton(
+              icon: const Icon(Icons.qr_code_scanner),
+              tooltip: 'Camera scan',
+              onPressed: () async {
+                final result = await Navigator.pushNamed(context, AppRouter.cameraScan);
+                if (result != null && result is String) {
+                  _barcodeCtrl.text = result;
+                  _search(result);
+                }
+              },
+            ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

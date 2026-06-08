@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/biometric_auth_service.dart';
 import '../../../routes/app_router.dart';
 import '../../../core/constants/app_colors.dart';
 
@@ -15,8 +16,40 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _biometricAuth = BiometricAuthService();
   bool _obscurePassword = true;
+  bool _biometricAvailable = false;
+  bool _enableBiometric = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometric();
+  }
+
+  Future<void> _checkBiometric() async {
+    final available = await _biometricAuth.isAvailable();
+    final enabled = await _biometricAuth.isEnabled();
+    if (!mounted) return;
+    setState(() => _biometricAvailable = available);
+    if (available && enabled) {
+      _doBiometricLogin();
+    }
+  }
+
+  Future<void> _doBiometricLogin() async {
+    final authed = await _biometricAuth.authenticate();
+    if (!mounted || !authed) return;
+    final username = await _biometricAuth.getStoredUsername();
+    if (username == null) return;
+    final auth = context.read<AuthService>();
+    final success = await auth.loginByUsername(username);
+    if (!mounted) return;
+    if (success) {
+      Navigator.pushReplacementNamed(context, AppRouter.dashboard);
+    }
+  }
 
   @override
   void dispose() {
@@ -38,6 +71,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
+      if (_enableBiometric) {
+        await _biometricAuth.enable(_usernameController.text.trim());
+      }
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, AppRouter.dashboard);
     } else {
       setState(() => _error = 'Invalid username or password');
@@ -107,6 +144,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           : const Text('Login', style: TextStyle(fontSize: 16)),
                     ),
                   ),
+                  if (_biometricAvailable) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: OutlinedButton.icon(
+                        onPressed: isLoading ? null : _doBiometricLogin,
+                        icon: const Icon(Icons.fingerprint),
+                        label: const Text('Login with Biometrics'),
+                      ),
+                    ),
+                    CheckboxListTile(
+                      value: _enableBiometric,
+                      onChanged: (v) => setState(() => _enableBiometric = v ?? false),
+                      title: const Text('Enable biometric login'),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ],
                 ],
               ),
             ),

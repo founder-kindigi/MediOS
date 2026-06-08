@@ -43,6 +43,21 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> loginByUsername(String username) async {
+    try {
+      final users = await _db.query('users',
+          where: 'username = ?', whereArgs: [username]);
+      if (users.isNotEmpty) {
+        _currentUser = UserModel.fromMap(users.first);
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<int> createUser(UserModel user) async {
     return await _db.insert('users', user.toMap());
   }

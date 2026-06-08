@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../core/constants/app_constants.dart';
 
@@ -29,6 +31,45 @@ class SettingsService extends ChangeNotifier {
       'customers': custCount,
       'users': userCount,
     };
+  }
+
+  Future<String?> getLastSyncTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('last_sync_time');
+  }
+
+  Future<void> setLastSyncTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_sync_time', DateTime.now().toIso8601String());
+  }
+
+  Future<void> importDatabase() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      if (file.path == null) return;
+
+      _isProcessing = true;
+      notifyListeners();
+
+      final dir = await getApplicationDocumentsDirectory();
+      final targetPath = '${dir.path}/medios.db';
+      final sourceFile = File(file.path!);
+      await sourceFile.copy(targetPath);
+
+      await setLastSyncTime();
+
+      _isProcessing = false;
+      notifyListeners();
+    } catch (e) {
+      _isProcessing = false;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> exportDatabase() async {
@@ -126,6 +167,52 @@ class SettingsService extends ChangeNotifier {
       _isProcessing = false;
       notifyListeners();
     }
+  }
+
+  Future<double> getDefaultTaxRate() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble('default_tax_rate') ?? 0;
+  }
+
+  Future<void> setDefaultTaxRate(double rate) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('default_tax_rate', rate);
+    notifyListeners();
+  }
+
+  Future<List<Map<String, dynamic>>> getCoupons() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString('coupons');
+    if (json == null) return [];
+    return (jsonDecode(json) as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<void> addCoupon(Map<String, dynamic> coupon) async {
+    final coupons = await getCoupons();
+    coupons.add(coupon);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('coupons', jsonEncode(coupons));
+    notifyListeners();
+  }
+
+  Future<void> removeCoupon(String code) async {
+    final coupons = await getCoupons();
+    coupons.removeWhere((c) => c['code'] == code);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('coupons', jsonEncode(coupons));
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>?> validateCoupon(String code, double total) async {
+    final coupons = await getCoupons();
+    for (final c in coupons) {
+      if (c['code'] == code && c['is_active'] == true) {
+        final minPurchase = (c['min_purchase'] as num?)?.toDouble() ?? 0;
+        if (total < minPurchase) return null;
+        return c;
+      }
+    }
+    return null;
   }
 
   String _csvEscape(String value) {

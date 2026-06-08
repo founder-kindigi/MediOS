@@ -8,6 +8,7 @@ class MedicineModel {
   final String unit;
   final double purchasePrice;
   final double sellingPrice;
+  final double wholesalePrice;
   final int stockQuantity;
   final int reorderLevel;
   final DateTime? expiryDate;
@@ -26,6 +27,7 @@ class MedicineModel {
     this.unit = 'strip',
     required this.purchasePrice,
     required this.sellingPrice,
+    this.wholesalePrice = 0,
     this.stockQuantity = 0,
     this.reorderLevel = 10,
     this.expiryDate,
@@ -46,6 +48,7 @@ class MedicineModel {
       'unit': unit,
       'purchase_price': purchasePrice,
       'selling_price': sellingPrice,
+      'wholesale_price': wholesalePrice,
       'stock_quantity': stockQuantity,
       'reorder_level': reorderLevel,
       'expiry_date': expiryDate?.toIso8601String(),
@@ -67,6 +70,7 @@ class MedicineModel {
       unit: map['unit'] as String? ?? 'strip',
       purchasePrice: (map['purchase_price'] as num?)?.toDouble() ?? 0,
       sellingPrice: (map['selling_price'] as num?)?.toDouble() ?? 0,
+      wholesalePrice: (map['wholesale_price'] as num?)?.toDouble() ?? 0,
       stockQuantity: map['stock_quantity'] as int? ?? 0,
       reorderLevel: map['reorder_level'] as int? ?? 10,
       expiryDate: map['expiry_date'] != null
@@ -86,7 +90,7 @@ class MedicineModel {
       expiryDate!.difference(DateTime.now()).inDays <= 30 &&
       !isExpired;
 
-  MedicineModel copyWith({int? stockQuantity, double? sellingPrice, int? reorderLevel, String? barcode}) {
+  MedicineModel copyWith({int? stockQuantity, double? sellingPrice, double? wholesalePrice, int? reorderLevel, String? barcode}) {
     return MedicineModel(
       id: id,
       name: name,
@@ -97,6 +101,7 @@ class MedicineModel {
       unit: unit,
       purchasePrice: purchasePrice,
       sellingPrice: sellingPrice ?? this.sellingPrice,
+      wholesalePrice: wholesalePrice ?? this.wholesalePrice,
       stockQuantity: stockQuantity ?? this.stockQuantity,
       reorderLevel: reorderLevel ?? this.reorderLevel,
       expiryDate: expiryDate,

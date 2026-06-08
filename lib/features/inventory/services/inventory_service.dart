@@ -24,9 +24,9 @@ class InventoryService extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final maps = await _db.query(
-      'SELECT m.*, c.name as category_name FROM medicines m LEFT JOIN categories c ON m.category_id = c.id',
-      orderBy: 'm.name ASC',
+    final db = await _db.database;
+    final maps = await db.rawQuery(
+      'SELECT m.*, c.name as category_name FROM medicines m LEFT JOIN categories c ON m.category_id = c.id ORDER BY m.name ASC',
     );
     _medicines = maps.map((m) => MedicineModel.fromMap(m)).toList();
 
