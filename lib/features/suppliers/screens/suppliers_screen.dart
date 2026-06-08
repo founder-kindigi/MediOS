@@ -4,6 +4,8 @@ import '../services/supplier_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/search_bar_widget.dart';
+import '../../../core/widgets/shimmer_skeleton.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../../../models/supplier_model.dart';
 
 class SuppliersScreen extends StatefulWidget {
@@ -56,9 +58,17 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
           ),
           Expanded(
             child: supplierService.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const ShimmerList()
                 : suppliers.isEmpty
-                    ? const Center(child: Text('No suppliers found'))
+                    ? EmptyStateWidget(
+                        icon: Icons.business_rounded,
+                        title: 'No suppliers found',
+                        subtitle: _searchController.text.isNotEmpty
+                            ? 'No results for "${_searchController.text}"'
+                            : 'Add your first supplier',
+                        actionLabel: _searchController.text.isNotEmpty ? null : 'Add Supplier',
+                        onAction: _searchController.text.isNotEmpty ? null : () => _showSupplierForm(),
+                      )
                     : RefreshIndicator(
                         onRefresh: () => supplierService.loadSuppliers(),
                         child: ListView.builder(

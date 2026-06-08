@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../services/purchase_order_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
+import '../../../core/widgets/shimmer_skeleton.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 
@@ -34,9 +36,15 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
         child: const Icon(Icons.add),
       ),
       body: poService.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ShimmerList()
           : poService.orders.isEmpty
-              ? const Center(child: Text('No purchase orders yet'))
+              ? EmptyStateWidget(
+                  icon: Icons.receipt_long_rounded,
+                  title: 'No purchase orders yet',
+                  subtitle: 'Create a purchase order to track supplier deliveries',
+                  actionLabel: 'New Purchase Order',
+                  onAction: () => Navigator.pushNamed(context, AppRouter.newPurchaseOrder),
+                )
               : RefreshIndicator(
                   onRefresh: () => poService.loadOrders(),
                   child: ListView.builder(

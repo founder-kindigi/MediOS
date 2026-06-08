@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/return_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/shimmer_skeleton.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/utils/helpers.dart';
 
 class ReturnsHistoryScreen extends StatefulWidget {
@@ -27,9 +29,13 @@ class _ReturnsHistoryScreenState extends State<ReturnsHistoryScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Returns History')),
       body: retService.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ShimmerList()
           : retService.returns.isEmpty
-              ? const Center(child: Text('No returns processed yet'))
+              ? EmptyStateWidget(
+                  icon: Icons.replay_rounded,
+                  title: 'No returns processed yet',
+                  subtitle: 'Process a return from the sales screen',
+                )
               : RefreshIndicator(
                   onRefresh: () => retService.loadReturns(),
                   child: ListView.builder(

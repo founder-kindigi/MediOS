@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../services/prescription_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
+import '../../../core/widgets/shimmer_skeleton.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../../../routes/app_router.dart';
 import '../../../models/prescription_model.dart';
 
@@ -62,9 +64,15 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
           ),
           Expanded(
             child: service.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const ShimmerList()
                 : filtered.isEmpty
-                    ? const Center(child: Text('No prescriptions found'))
+                    ? EmptyStateWidget(
+                        icon: Icons.description_rounded,
+                        title: 'No prescriptions found',
+                        subtitle: _filter != 'all' ? 'No prescriptions with status "$_filter"' : 'Create your first prescription',
+                        actionLabel: _filter != 'all' ? null : 'New Prescription',
+                        onAction: _filter != 'all' ? null : () => Navigator.pushNamed(context, '/prescriptions/new'),
+                      )
                     : ListView.builder(
                         padding: const EdgeInsets.all(8),
                         itemCount: filtered.length,

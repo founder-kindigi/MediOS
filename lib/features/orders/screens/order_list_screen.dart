@@ -4,6 +4,8 @@ import '../services/order_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/widgets/app_drawer.dart';
+import '../../../core/widgets/shimmer_skeleton.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../../../models/customer_order_model.dart';
 
 class OrderListScreen extends StatefulWidget {
@@ -59,9 +61,15 @@ class _OrderListScreenState extends State<OrderListScreen> {
           ),
           Expanded(
             child: service.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const ShimmerList()
                 : filtered.isEmpty
-                    ? const Center(child: Text('No orders'))
+                    ? EmptyStateWidget(
+                        icon: Icons.receipt_long_rounded,
+                        title: 'No orders found',
+                        subtitle: _filter != 'all' ? 'No orders with status "$_filter"' : 'Create your first customer order',
+                        actionLabel: _filter != 'all' ? null : 'New Order',
+                        onAction: _filter != 'all' ? null : () => Navigator.pushNamed(context, '/orders/new'),
+                      )
                     : ListView.builder(
                         padding: const EdgeInsets.all(8),
                         itemCount: filtered.length,

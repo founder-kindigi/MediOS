@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../services/store_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
+import '../../../core/widgets/shimmer_skeleton.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../../../models/store_model.dart';
 
 class StoreListScreen extends StatefulWidget {
@@ -63,9 +65,15 @@ class _StoreListScreenState extends State<StoreListScreen> {
         child: const Icon(Icons.add),
       ),
       body: service.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ShimmerList(itemCount: 3)
           : service.stores.isEmpty
-              ? const Center(child: Text('No stores. Add one to get started.'))
+              ? EmptyStateWidget(
+                  icon: Icons.store_rounded,
+                  title: 'No stores yet',
+                  subtitle: 'Add your first store location',
+                  actionLabel: 'Add Store',
+                  onAction: _addStore,
+                )
               : ListView.builder(
                   padding: const EdgeInsets.all(8),
                   itemCount: service.stores.length,

@@ -4,6 +4,8 @@ import '../services/customer_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/search_bar_widget.dart';
+import '../../../core/widgets/shimmer_skeleton.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../../../models/customer_model.dart';
 import '../../../routes/app_router.dart';
 
@@ -57,9 +59,17 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ),
           Expanded(
             child: customerService.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const ShimmerList()
                 : customers.isEmpty
-                    ? const Center(child: Text('No customers found'))
+                    ? EmptyStateWidget(
+                        icon: Icons.people_rounded,
+                        title: 'No customers found',
+                        subtitle: _searchController.text.isNotEmpty
+                            ? 'No results for "${_searchController.text}"'
+                            : 'Add your first customer',
+                        actionLabel: _searchController.text.isNotEmpty ? null : 'Add Customer',
+                        onAction: _searchController.text.isNotEmpty ? null : () => _showCustomerForm(),
+                      )
                     : RefreshIndicator(
                         onRefresh: () => customerService.loadCustomers(),
                         child: ListView.builder(
