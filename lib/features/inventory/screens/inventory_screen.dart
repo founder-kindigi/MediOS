@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/inventory_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_dimensions.dart';
 import '../../../core/widgets/search_bar_widget.dart';
+import '../../../core/widgets/shimmer_skeleton.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 
@@ -95,9 +98,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
           Expanded(
             child: inventory.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const ShimmerList()
                 : medicines.isEmpty
-                    ? const Center(child: Text('No medicines found'))
+                    ? EmptyStateWidget(
+                        icon: Icons.medication_rounded,
+                        title: 'No medicines found',
+                        subtitle: _searchController.text.isNotEmpty
+                            ? 'No results for "${_searchController.text}"'
+                            : _filter != 'all'
+                                ? 'No medicines match the selected filter'
+                                : 'Add your first medicine to get started',
+                        actionLabel: _searchController.text.isNotEmpty || _filter != 'all' ? null : 'Add Medicine',
+                        onAction: _searchController.text.isNotEmpty || _filter != 'all' ? null : () => Navigator.pushNamed(context, '${AppRouter.inventory}/add'),
+                      )
                     : RefreshIndicator(
                         onRefresh: () => inventory.loadMedicines(),
                         child: ListView.builder(

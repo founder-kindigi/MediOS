@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/sales_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/shimmer_skeleton.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 import '../../../core/services/invoice_service.dart';
@@ -33,9 +35,15 @@ class _SalesScreenState extends State<SalesScreen> {
         child: const Icon(Icons.add),
       ),
       body: salesService.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ShimmerList()
           : salesService.sales.isEmpty
-              ? const Center(child: Text('No sales yet'))
+              ? EmptyStateWidget(
+                  icon: Icons.shopping_cart_rounded,
+                  title: 'No sales yet',
+                  subtitle: 'Create your first sale to start tracking revenue',
+                  actionLabel: 'New Sale',
+                  onAction: () => Navigator.pushNamed(context, AppRouter.newSale),
+                )
               : RefreshIndicator(
                   onRefresh: () => salesService.loadSales(),
                   child: ListView.builder(

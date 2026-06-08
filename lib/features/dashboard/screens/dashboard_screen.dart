@@ -5,6 +5,7 @@ import '../services/dashboard_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
+import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 
@@ -49,7 +50,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       body: dashboard.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Padding(
+              padding: const EdgeInsets.all(16),
+              child: ListView(
+                children: [
+                  const ShimmerGrid(),
+                  const SizedBox(height: 20),
+                  ShimmerSkeleton(
+                    child: Container(
+                      height: 220,
+                      decoration: BoxDecoration(
+                        color: AppColors.shimmerBase,
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
           : RefreshIndicator(
               onRefresh: () => dashboard.loadDashboard(),
               child: ListView(
