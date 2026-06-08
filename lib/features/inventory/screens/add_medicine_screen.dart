@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../services/inventory_service.dart';
 import '../../../models/medicine_model.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 class AddMedicineScreen extends StatefulWidget {
   final MedicineModel? medicine;
@@ -99,8 +100,10 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
 
     if (_isEditing) {
       await inventory.updateMedicine(medicine);
+      if (mounted) AppSnackbar.showSuccess(context, 'Medicine updated successfully');
     } else {
       await inventory.addMedicine(medicine);
+      if (mounted) AppSnackbar.showSuccess(context, 'Medicine added successfully');
     }
 
     if (mounted) Navigator.pop(context);

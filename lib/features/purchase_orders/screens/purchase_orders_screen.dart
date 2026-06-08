@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 
@@ -140,6 +141,7 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
                   OutlinedButton(
                     onPressed: () {
                       poService.updateStatus(order.id!, 'received');
+                      AppSnackbar.showSuccess(context, 'Order marked as received');
                       Navigator.pop(context);
                     },
                     style: OutlinedButton.styleFrom(foregroundColor: AppColors.success),
@@ -149,6 +151,7 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
                   OutlinedButton(
                     onPressed: () {
                       poService.updateStatus(order.id!, 'cancelled');
+                      AppSnackbar.showWarning(context, 'Purchase order cancelled');
                       Navigator.pop(context);
                     },
                     style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),

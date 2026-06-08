@@ -6,6 +6,7 @@ import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../models/customer_model.dart';
 import '../../../routes/app_router.dart';
 
@@ -146,8 +147,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
               );
               if (customer == null) {
                 await svc.addCustomer(model);
+                if (context.mounted) AppSnackbar.showSuccess(context, 'Customer added successfully');
               } else {
                 await svc.updateCustomer(model);
+                if (context.mounted) AppSnackbar.showSuccess(context, 'Customer updated successfully');
               }
               if (context.mounted) Navigator.pop(context);
             },
@@ -169,6 +172,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ElevatedButton(
             onPressed: () {
               context.read<CustomerService>().deleteCustomer(customer.id!);
+              AppSnackbar.showSuccess(context, 'Customer deleted');
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),

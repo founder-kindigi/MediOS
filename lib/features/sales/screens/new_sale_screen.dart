@@ -6,6 +6,7 @@ import '../../settings/services/settings_service.dart';
 import '../../../models/sale_model.dart';
 import '../../../models/medicine_model.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
 
 class NewSaleScreen extends StatefulWidget {
@@ -124,9 +125,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sale completed - ${sale.billNumber}')),
-      );
+      AppSnackbar.showSuccess(context, 'Sale completed - ${sale.billNumber}');
       Navigator.pop(context);
     }
   }

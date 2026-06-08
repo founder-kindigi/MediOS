@@ -6,6 +6,7 @@ import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../models/supplier_model.dart';
 
 class SuppliersScreen extends StatefulWidget {
@@ -144,8 +145,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
               );
               if (supplier == null) {
                 await svc.addSupplier(model);
+                if (context.mounted) AppSnackbar.showSuccess(context, 'Supplier added successfully');
               } else {
                 await svc.updateSupplier(model);
+                if (context.mounted) AppSnackbar.showSuccess(context, 'Supplier updated successfully');
               }
               if (context.mounted) Navigator.pop(context);
             },
@@ -167,6 +170,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
           ElevatedButton(
             onPressed: () {
               context.read<SupplierService>().deleteSupplier(supplier.id!);
+              AppSnackbar.showSuccess(context, 'Supplier deleted');
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),

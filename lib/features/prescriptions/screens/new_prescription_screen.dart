@@ -5,6 +5,7 @@ import '../../inventory/services/inventory_service.dart';
 import '../../../models/prescription_model.dart';
 import '../../../models/medicine_model.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 class _PrescItem {
   final int medicineId;
@@ -88,7 +89,10 @@ class _NewPrescriptionScreenState extends State<NewPrescriptionScreen> {
         quantity: i.quantity,
       )).toList(),
     ));
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      AppSnackbar.showSuccess(context, 'Prescription created');
+      Navigator.pop(context);
+    }
   }
 
   @override

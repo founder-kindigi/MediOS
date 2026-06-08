@@ -6,6 +6,7 @@ import '../../../core/utils/helpers.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../models/customer_order_model.dart';
 
 class OrderListScreen extends StatefulWidget {
@@ -178,6 +179,7 @@ class _OrderDetailSheet extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         service.updateStatus(order.id!, 'fulfilled');
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order fulfilled')));
                         Navigator.pop(ctx);
                       },
                       icon: const Icon(Icons.check_circle),
@@ -190,6 +192,7 @@ class _OrderDetailSheet extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         service.updateStatus(order.id!, 'cancelled');
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order cancelled')));
                         Navigator.pop(ctx);
                       },
                       icon: const Icon(Icons.cancel),

@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_router.dart';
 import '../../../models/prescription_model.dart';
 
@@ -197,6 +198,7 @@ class _PrescriptionDetailSheet extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         service.updateStatus(prescription.id!, 'completed');
+                        AppSnackbar.showSuccess(context, 'Prescription marked completed');
                         Navigator.pop(ctx);
                       },
                       icon: const Icon(Icons.check),
@@ -211,6 +213,7 @@ class _PrescriptionDetailSheet extends StatelessWidget {
                 child: TextButton.icon(
                   onPressed: () {
                     service.updateStatus(prescription.id!, 'cancelled');
+                    AppSnackbar.showWarning(context, 'Prescription cancelled');
                     Navigator.pop(ctx);
                   },
                   icon: const Icon(Icons.cancel, color: AppColors.error),

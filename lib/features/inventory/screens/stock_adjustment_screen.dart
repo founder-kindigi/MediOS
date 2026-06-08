@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/inventory_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../models/medicine_model.dart';
 
@@ -53,9 +54,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
     await inventory.getTransactionHistory(); // no-op, just to refresh
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Stock adjusted successfully')),
-      );
+      AppSnackbar.showSuccess(context, 'Stock adjusted successfully');
       Navigator.pop(context);
     }
   }

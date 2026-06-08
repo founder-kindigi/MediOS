@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../models/store_model.dart';
 
 class StoreListScreen extends StatefulWidget {
@@ -51,6 +52,7 @@ class _StoreListScreenState extends State<StoreListScreen> {
       await context.read<StoreService>().addStore(
         StoreModel(name: nameCtrl.text.trim(), address: addressCtrl.text.trim(), phone: phoneCtrl.text.trim()),
       );
+      if (context.mounted) AppSnackbar.showSuccess(context, 'Store added');
     }
   }
 

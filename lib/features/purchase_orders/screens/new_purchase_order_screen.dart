@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../services/purchase_order_service.dart';
 import '../../inventory/services/inventory_service.dart';
 import '../../../models/purchase_order_model.dart';
-import '../../../models/medicine_model.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
 
 class NewPurchaseOrderScreen extends StatefulWidget {
@@ -85,9 +85,7 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Order placed - ${order.orderNumber}')),
-      );
+      AppSnackbar.showSuccess(context, 'Order placed - ${order.orderNumber}');
       Navigator.pop(context);
     }
   }
