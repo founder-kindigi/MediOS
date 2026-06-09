@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../models/customer_model.dart';
 
 class CustomerService extends ChangeNotifier {
-  final DatabaseHelper _db = DatabaseHelper();
+  final DatabaseHelper _db;
+
+  CustomerService({DatabaseHelper? databaseHelper})
+      : _db = databaseHelper ?? GetIt.instance<DatabaseHelper>();
   List<CustomerModel> _customers = [];
   bool _isLoading = false;
 

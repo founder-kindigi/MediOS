@@ -15,21 +15,28 @@ class SearchBarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        hintText: hintText,
-        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
-        suffixIcon: controller.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear, size: 20),
-                onPressed: () {
-                  controller.clear();
-                  onChanged('');
-                },
-              )
-            : null,
+    return Semantics(
+      textField: true,
+      label: hintText,
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          hintText: hintText,
+          prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+          suffixIcon: controller.text.isNotEmpty
+              ? Semantics(
+                  button: true,
+                  label: 'Clear search',
+                  child: IconButton(
+                    icon: const Icon(Icons.clear, size: 20),
+                    onPressed: () {
+                      controller.clear();
+                      onChanged('');
+                    },
+                  ),
+                )
+              : null,
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
@@ -42,6 +49,7 @@ class SearchBarWidget extends StatelessWidget {
         ),
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
       ),
+    ),
     );
   }
 }

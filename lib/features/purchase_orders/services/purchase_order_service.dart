@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../models/purchase_order_model.dart';
 
 class PurchaseOrderService extends ChangeNotifier {
-  final DatabaseHelper _db = DatabaseHelper();
+  final DatabaseHelper _db;
+
+  PurchaseOrderService({DatabaseHelper? databaseHelper})
+      : _db = databaseHelper ?? GetIt.instance<DatabaseHelper>();
   List<PurchaseOrderModel> _orders = [];
   bool _isLoading = false;
 

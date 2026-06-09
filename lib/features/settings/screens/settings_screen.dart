@@ -3,7 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../services/settings_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
+import '../../../core/errors/app_error.dart';
+
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/validators.dart';
@@ -38,9 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await context.read<SettingsService>().exportDatabase();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e')),
-        );
+        AppSnackbar.showError(context, e is AppError ? e.userMessage : 'Export failed');
       }
     }
   }
@@ -50,9 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await context.read<SettingsService>().exportMedicinesCsv();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('CSV export failed: $e')),
-        );
+        AppSnackbar.showError(context, e is AppError ? e.userMessage : 'CSV export failed');
       }
     }
   }
@@ -72,11 +69,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await context.read<SettingsService>().clearAllData();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('All data cleared')),
-                );
+              try {
+                await context.read<SettingsService>().clearAllData();
+                if (mounted) {
+                  AppSnackbar.showSuccess(context, 'All data cleared');
+                }
+              } catch (e) {
+                if (mounted) {
+                  AppSnackbar.showError(context, e is AppError ? e.userMessage : 'Failed to clear data');
+                }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -95,7 +96,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      drawer: const AppDrawer(),
+
       body: _loadingInfo
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -457,8 +458,26 @@ class _CouponSectionState extends State<_CouponSection> {
             trailing: IconButton(
               icon: const Icon(Icons.delete, size: 18, color: AppColors.error),
               onPressed: () {
-                widget.settings.removeCoupon(c['code'] as String);
-                _load();
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Remove Coupon'),
+                    content: Text('Delete coupon "${c['code']}"?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          widget.settings.removeCoupon(c['code'] as String);
+                          AppSnackbar.showSuccess(context, 'Coupon removed');
+                          _load();
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
           )),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/prescription_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
+
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -46,7 +46,7 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
           ),
         ],
       ),
-      drawer: const AppDrawer(),
+
       body: Column(
         children: [
           Padding(

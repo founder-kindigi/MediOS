@@ -95,73 +95,109 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.local_pharmacy, size: 80, color: AppColors.primary),
+                  Semantics(
+                    label: 'MediOS Pharmacy App Icon',
+                    child: const Icon(Icons.local_pharmacy, size: 80, color: AppColors.primary),
+                  ),
                   const SizedBox(height: 16),
-                  Text('MediOS', style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold, color: AppColors.primary,
-                  )),
+                  Semantics(
+                    header: true,
+                    child: Text('MediOS', style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.bold, color: AppColors.primary,
+                    )),
+                  ),
                   const SizedBox(height: 8),
                   Text('Pharmacy Management System',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppColors.textSecondary,
                   )),
                   const SizedBox(height: 48),
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      prefixIcon: Icon(Icons.person),
+                  Semantics(
+                    textField: true,
+                    child: TextFormField(
+                      controller: _usernameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Username',
+                        hintText: 'Enter your username',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      textInputAction: TextInputAction.next,
+                      onChanged: (_) => _formKey.currentState?.validate(),
+                      validator: (v) => v == null || v.trim().isEmpty ? 'Enter username' : null,
                     ),
-                    validator: (v) => v == null || v.trim().isEmpty ? 'Enter username' : null,
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  Semantics(
+                    textField: true,
+                    child: TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        hintText: 'Enter your password',
+                        prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: Semantics(
+                          label: _obscurePassword ? 'Show password' : 'Hide password',
+                          button: true,
+                          child: IconButton(
+                            icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
+                        ),
                       ),
+                      textInputAction: TextInputAction.done,
+                      onChanged: (_) => _formKey.currentState?.validate(),
+                      validator: (v) => v == null || v.isEmpty ? 'Enter password' : null,
+                      onFieldSubmitted: (_) => _login(),
                     ),
-                    validator: (v) => v == null || v.isEmpty ? 'Enter password' : null,
-                    onFieldSubmitted: (_) => _login(),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
-                    Text(_error!, style: const TextStyle(color: AppColors.error)),
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(_error!, style: const TextStyle(color: AppColors.error)),
+                    ),
                   ],
                   const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: isLoading ? null : _login,
-                      child: isLoading
-                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('Login', style: TextStyle(fontSize: 16)),
+                  Semantics(
+                    button: true,
+                    label: 'Login',
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _login,
+                        child: isLoading
+                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Text('Login', style: TextStyle(fontSize: 16)),
+                      ),
                     ),
                   ),
                   if (_biometricAvailable) ...[
                     const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: OutlinedButton.icon(
-                        onPressed: isLoading ? null : _doBiometricLogin,
-                        icon: const Icon(Icons.fingerprint),
-                        label: const Text('Login with Biometrics'),
+                    Semantics(
+                      button: true,
+                      label: 'Login with Biometrics',
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: OutlinedButton.icon(
+                          onPressed: isLoading ? null : _doBiometricLogin,
+                          icon: const Icon(Icons.fingerprint),
+                          label: const Text('Login with Biometrics'),
+                        ),
                       ),
                     ),
-                    CheckboxListTile(
-                      value: _enableBiometric,
-                      onChanged: (v) => setState(() => _enableBiometric = v ?? false),
-                      title: const Text('Enable biometric login'),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
+                    Semantics(
+                      label: 'Enable biometric login toggle',
+                      child: CheckboxListTile(
+                        value: _enableBiometric,
+                        onChanged: (v) => setState(() => _enableBiometric = v ?? false),
+                        title: const Text('Enable biometric login'),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
                   ],
                 ],

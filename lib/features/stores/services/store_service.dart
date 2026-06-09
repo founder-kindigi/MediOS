@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../models/store_model.dart';
 
 class StoreService extends ChangeNotifier {
-  final DatabaseHelper _db = DatabaseHelper();
+  final DatabaseHelper _db;
+
+  StoreService({DatabaseHelper? databaseHelper})
+      : _db = databaseHelper ?? GetIt.instance<DatabaseHelper>();
   List<StoreModel> _stores = [];
   int _selectedStoreId = 1;
   bool _isLoading = false;

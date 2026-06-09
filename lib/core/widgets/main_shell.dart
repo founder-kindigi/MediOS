@@ -91,13 +91,17 @@ class _MainShellState extends State<MainShell> {
           )).toList(),
           trailing: Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: IconButton(
-              icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
-              tooltip: 'Logout',
-              onPressed: () {
-                auth.logout();
-                Navigator.pushReplacementNamed(context, AppRouter.login);
-              },
+            child: Semantics(
+              button: true,
+              label: 'Logout',
+              child: IconButton(
+                icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
+                tooltip: 'Logout',
+                onPressed: () {
+                  auth.logout();
+                  Navigator.pushReplacementNamed(context, AppRouter.login);
+                },
+              ),
             ),
           ),
         ),
@@ -123,24 +127,27 @@ class _MainShellState extends State<MainShell> {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.border.withValues(alpha: 0.5))),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onTabSelected,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        elevation: 0,
-        items: _tabs.map((t) => BottomNavigationBarItem(
-          icon: Icon(t.icon),
-          activeIcon: Icon(t.icon, size: 26),
-          label: t.label,
-        )).toList(),
+    return Semantics(
+      explicitChildNodes: true,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.border.withValues(alpha: 0.5))),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onTabSelected,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.textSecondary,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
+          elevation: 0,
+          items: _tabs.map((t) => BottomNavigationBarItem(
+            icon: Icon(t.icon),
+            activeIcon: Icon(t.icon, size: 26),
+            label: t.label,
+          )).toList(),
+        ),
       ),
     );
   }
@@ -164,9 +171,13 @@ class _PeopleTab extends StatelessWidget {
       appBar: AppBar(
         title: const Text('People'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {},
+          Semantics(
+            button: true,
+            label: 'Search',
+            child: IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {},
+            ),
           ),
         ],
       ),
@@ -188,17 +199,22 @@ class _PeopleTab extends StatelessWidget {
   }
 
   Widget _menuCard(BuildContext context, IconData icon, String title, Color color, String route, String subtitle) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.1),
-          child: Icon(icon, color: color),
+    return Semantics(
+      button: true,
+      label: title,
+      hint: subtitle,
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: color.withValues(alpha: 0.1),
+            child: Icon(icon, color: color),
+          ),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+          subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+          trailing: const Icon(Icons.chevron_right, color: AppColors.textHint),
+          onTap: () => Navigator.pushNamed(context, route),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textHint),
-        onTap: () => Navigator.pushNamed(context, route),
       ),
     );
   }
@@ -231,14 +247,18 @@ class _MoreTab extends StatelessWidget {
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 8),
-            Center(
-              child: TextButton.icon(
-                onPressed: () {
-                  auth.logout();
-                  Navigator.pushReplacementNamed(context, AppRouter.login);
-                },
-                icon: const Icon(Icons.logout_rounded, color: AppColors.error),
-                label: const Text('Logout', style: TextStyle(color: AppColors.error)),
+            Semantics(
+              button: true,
+              label: 'Logout',
+              child: Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    auth.logout();
+                    Navigator.pushReplacementNamed(context, AppRouter.login);
+                  },
+                  icon: const Icon(Icons.logout_rounded, color: AppColors.error),
+                  label: const Text('Logout', style: TextStyle(color: AppColors.error)),
+                ),
               ),
             ),
           ],
@@ -248,17 +268,22 @@ class _MoreTab extends StatelessWidget {
   }
 
   Widget _menuCard(BuildContext context, IconData icon, String title, Color color, String route, String subtitle) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.1),
-          child: Icon(icon, color: color),
+    return Semantics(
+      button: true,
+      label: title,
+      hint: subtitle,
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: color.withValues(alpha: 0.1),
+            child: Icon(icon, color: color),
+          ),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+          subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+          trailing: const Icon(Icons.chevron_right, color: AppColors.textHint),
+          onTap: () => Navigator.pushNamed(context, route),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textHint),
-        onTap: () => Navigator.pushNamed(context, route),
       ),
     );
   }

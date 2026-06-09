@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/customer_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
+
 import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
@@ -45,7 +45,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Customers')),
-      drawer: const AppDrawer(),
+
+
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCustomerForm(),
         child: const Icon(Icons.add),
@@ -133,10 +134,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *'), validator: (v) => Validators.required(v, 'Name')),
-                  TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone *'), validator: (v) => Validators.phone(v)),
-                  TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email'), validator: (v) => v != null && v.isNotEmpty ? Validators.email(v) : null),
-                  TextFormField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address'), maxLines: 2),
+                  TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *', hintText: 'Enter customer name'), onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.required(v, 'Name')),
+                  TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone *', hintText: 'Enter phone number'), onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.phone(v)),
+                  TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email', hintText: 'Enter email address'), validator: (v) => v != null && v.isNotEmpty ? Validators.email(v) : null),
+                  TextFormField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address', hintText: 'Enter address'), maxLines: 2),
                 ],
               ),
             ),

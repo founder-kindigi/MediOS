@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../models/prescription_model.dart';
 
 class PrescriptionService extends ChangeNotifier {
-  final DatabaseHelper _db = DatabaseHelper();
+  final DatabaseHelper _db;
+
+  PrescriptionService({DatabaseHelper? databaseHelper})
+      : _db = databaseHelper ?? GetIt.instance<DatabaseHelper>();
   List<PrescriptionModel> _prescriptions = [];
   bool _isLoading = false;
 

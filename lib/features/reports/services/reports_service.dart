@@ -1,8 +1,12 @@
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import '../../../core/database/database_helper.dart';
 
 class ReportsService extends ChangeNotifier {
-  final DatabaseHelper _db = DatabaseHelper();
+  final DatabaseHelper _db;
+
+  ReportsService({DatabaseHelper? databaseHelper})
+      : _db = databaseHelper ?? GetIt.instance<DatabaseHelper>();
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;

@@ -125,13 +125,20 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
             children: [
               TextFormField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: 'Medicine Name *'),
+                decoration: const InputDecoration(
+                  labelText: 'Medicine Name *',
+                  hintText: 'Enter medicine name',
+                ),
+                onChanged: (_) => _formKey.currentState?.validate(),
                 validator: (v) => Validators.required(v, 'Name'),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _genericCtrl,
-                decoration: const InputDecoration(labelText: 'Generic Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Generic Name',
+                  hintText: 'Enter generic name',
+                ),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
@@ -146,7 +153,10 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _manufacturerCtrl,
-                decoration: const InputDecoration(labelText: 'Manufacturer'),
+                decoration: const InputDecoration(
+                  labelText: 'Manufacturer',
+                  hintText: 'Enter manufacturer name',
+                ),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -161,8 +171,12 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _purchasePriceCtrl,
-                      decoration: const InputDecoration(labelText: 'Purchase Price *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Purchase Price *',
+                        hintText: '0.00',
+                      ),
                       keyboardType: TextInputType.number,
+                      onChanged: (_) => _formKey.currentState?.validate(),
                       validator: (v) => Validators.positiveNumber(v, 'Purchase price'),
                     ),
                   ),
@@ -170,8 +184,12 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _sellingPriceCtrl,
-                      decoration: const InputDecoration(labelText: 'Selling Price *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Selling Price *',
+                        hintText: '0.00',
+                      ),
                       keyboardType: TextInputType.number,
+                      onChanged: (_) => _formKey.currentState?.validate(),
                       validator: (v) => Validators.positiveNumber(v, 'Selling price'),
                     ),
                   ),
@@ -189,8 +207,12 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _stockCtrl,
-                      decoration: const InputDecoration(labelText: 'Stock Quantity *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Stock Quantity *',
+                        hintText: '0',
+                      ),
                       keyboardType: TextInputType.number,
+                      onChanged: (_) => _formKey.currentState?.validate(),
                       validator: (v) => Validators.positiveNumber(v, 'Stock'),
                     ),
                   ),
@@ -198,7 +220,10 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _reorderCtrl,
-                      decoration: const InputDecoration(labelText: 'Reorder Level'),
+                      decoration: const InputDecoration(
+                        labelText: 'Reorder Level',
+                        hintText: '0',
+                      ),
                       keyboardType: TextInputType.number,
                     ),
                   ),

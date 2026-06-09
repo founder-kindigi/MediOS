@@ -1,11 +1,15 @@
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../models/medicine_model.dart';
 import '../../../models/category_model.dart';
 import '../../../models/inventory_transaction_model.dart';
 
 class InventoryService extends ChangeNotifier {
-  final DatabaseHelper _db = DatabaseHelper();
+  final DatabaseHelper _db;
+
+  InventoryService({DatabaseHelper? databaseHelper})
+      : _db = databaseHelper ?? GetIt.instance<DatabaseHelper>();
   List<MedicineModel> _medicines = [];
   List<CategoryModel> _categories = [];
   bool _isLoading = false;

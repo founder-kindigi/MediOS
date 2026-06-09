@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/purchase_order_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
+
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -31,7 +31,7 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Purchase Orders')),
-      drawer: const AppDrawer(),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.pushNamed(context, AppRouter.newPurchaseOrder),
         child: const Icon(Icons.add),

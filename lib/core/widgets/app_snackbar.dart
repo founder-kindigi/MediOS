@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_dimensions.dart';
+import '../errors/app_error.dart';
 
 class AppSnackbar {
   static void showSuccess(BuildContext context, String message) {
@@ -9,6 +10,10 @@ class AppSnackbar {
 
   static void showError(BuildContext context, String message) {
     _show(context, message, AppColors.error, Icons.error_rounded);
+  }
+
+  static void showAppError(BuildContext context, AppError error) {
+    _show(context, error.userMessage, AppColors.error, Icons.error_rounded);
   }
 
   static void showInfo(BuildContext context, String message) {

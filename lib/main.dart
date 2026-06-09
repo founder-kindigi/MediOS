@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/database/database_helper.dart';
+import 'core/di/service_locator.dart';
 import 'core/services/seed_data_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
@@ -54,6 +55,7 @@ import 'routes/app_transitions.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  setupServiceLocator();
   try {
     await DatabaseHelper().database;
     await SeedDataService().seedMedicinesIfEmpty();
@@ -97,6 +99,17 @@ class MediOSApp extends StatelessWidget {
         darkTheme: AppTheme.darkTheme,
         themeMode: themeProvider.mode,
         initialRoute: AppRouter.login,
+        builder: (context, child) {
+          final mediaQuery = MediaQuery.of(context);
+          return MediaQuery(
+            data: mediaQuery.copyWith(
+              textScaler: TextScaler.linear(
+                mediaQuery.textScaleFactor.clamp(0.8, 1.5),
+              ),
+            ),
+            child: child!,
+          );
+        },
         onGenerateRoute: (settings) {
           final args = settings.arguments;
           switch (settings.name) {

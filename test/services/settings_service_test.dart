@@ -22,7 +22,7 @@ void main() {
   test('getAppInfo returns correct structure', () async {
     final info = await service.getAppInfo();
     expect(info['appName'], 'MediOS');
-    expect(info['dbVersion'], 7);
+    expect(info['dbVersion'], 8);
     expect(info.containsKey('medicines'), true);
   });
 

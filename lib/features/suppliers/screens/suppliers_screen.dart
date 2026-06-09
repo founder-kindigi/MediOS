@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/supplier_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
+
 import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
@@ -46,7 +46,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Suppliers')),
-      drawer: const AppDrawer(),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showSupplierForm(),
         child: const Icon(Icons.add),
@@ -135,11 +135,11 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *'), validator: (v) => Validators.required(v, 'Name')),
-                  TextFormField(controller: contactCtrl, decoration: const InputDecoration(labelText: 'Contact Person')),
-                  TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone *'), validator: (v) => Validators.phone(v)),
-                  TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email'), validator: (v) => v != null && v.isNotEmpty ? Validators.email(v) : null),
-                  TextFormField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address'), maxLines: 2),
+                  TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name *', hintText: 'Enter supplier name'), onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.required(v, 'Name')),
+                  TextFormField(controller: contactCtrl, decoration: const InputDecoration(labelText: 'Contact Person', hintText: 'Enter contact person')),
+                  TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone *', hintText: 'Enter phone number'), onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.phone(v)),
+                  TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email', hintText: 'Enter email address'), validator: (v) => v != null && v.isNotEmpty ? Validators.email(v) : null),
+                  TextFormField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address', hintText: 'Enter address'), maxLines: 2),
                 ],
               ),
             ),

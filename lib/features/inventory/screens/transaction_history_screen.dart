@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/inventory_service.dart';
-import '../../../core/widgets/app_drawer.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
 
@@ -31,7 +31,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Transaction History')),
-      drawer: const AppDrawer(),
+
       body: _transactions == null
           ? const Center(child: CircularProgressIndicator())
           : Column(

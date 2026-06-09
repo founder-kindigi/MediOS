@@ -1,9 +1,15 @@
 import 'package:flutter/foundation.dart';
+import 'package:bcrypt/bcrypt.dart';
+import 'package:get_it/get_it.dart';
 import '../../../core/database/database_helper.dart';
+import '../../../core/errors/app_error.dart';
 import '../../../models/user_model.dart';
 
 class AuthService extends ChangeNotifier {
-  final DatabaseHelper _db = DatabaseHelper();
+  final DatabaseHelper _db;
+
+  AuthService({DatabaseHelper? databaseHelper})
+      : _db = databaseHelper ?? GetIt.instance<DatabaseHelper>();
   UserModel? _currentUser;
   bool _isLoading = false;
 
@@ -21,7 +27,7 @@ class AuthService extends ChangeNotifier {
           where: 'username = ?', whereArgs: [username]);
       if (users.isNotEmpty) {
         final user = UserModel.fromMap(users.first);
-        if (user.passwordHash == password) {
+        if (BCrypt.checkpw(password, user.passwordHash)) {
           _currentUser = user;
           _isLoading = false;
           notifyListeners();
@@ -31,6 +37,10 @@ class AuthService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return false;
+    } on AppError {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
     } catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -59,7 +69,13 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<int> createUser(UserModel user) async {
-    return await _db.insert('users', user.toMap());
+    final hashedUser = UserModel(
+      username: user.username,
+      passwordHash: BCrypt.hashpw(user.passwordHash, BCrypt.gensalt()),
+      fullName: user.fullName,
+      role: user.role,
+    );
+    return await _db.insert('users', hashedUser.toMap());
   }
 
   Future<List<UserModel>> getAllUsers() async {

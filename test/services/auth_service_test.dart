@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../test_helper.dart';
 import '../../lib/features/auth/services/auth_service.dart';
-import '../../lib/features/auth/services/biometric_auth_service.dart';
 import '../../lib/models/user_model.dart';
 
 void main() {

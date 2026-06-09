@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite_common/utils/utils.dart' show firstIntValue;
+import 'package:bcrypt/bcrypt.dart';
 import '../lib/core/database/database_helper.dart';
+import '../lib/core/di/service_locator.dart';
 
 DatabaseFactory get factory => databaseFactoryFfi;
 
@@ -36,15 +38,18 @@ Future<void> _createTables(Database db) async {
 }
 
 Future<Database> createAndSetTestDb() async {
+  setupServiceLocator();
   final db = await createTestDb();
   DatabaseHelper.setTestDatabase(db);
   final now = DateTime.now().toIso8601String();
   await db.insert('stores', {'name': 'Main Store', 'address': '', 'phone': '', 'is_active': 1});
   await db.execute("INSERT INTO categories (name, description, created_at) VALUES ('Tablet', 'Solid dosage forms', ?), ('Capsule', 'Gelatin encapsulated medicines', ?), ('Syrup', 'Liquid oral medicines', ?), ('Injection', 'Injectable medicines', ?), ('Ointment', 'Topical applications', ?), ('Drop', 'Eye/ear/nasal drops', ?)", [now, now, now, now, now, now]);
-  await db.insert('users', {'username': 'admin', 'password_hash': 'admin123', 'full_name': 'Administrator', 'role': 'admin', 'created_at': now});
+  final adminHash = BCrypt.hashpw('admin123', BCrypt.gensalt());
+  await db.insert('users', {'username': 'admin', 'password_hash': adminHash, 'full_name': 'Administrator', 'role': 'admin', 'created_at': now});
   return db;
 }
 
 void resetTestDb() {
   DatabaseHelper.setTestDatabase(null);
+  GetIt.I.reset();
 }

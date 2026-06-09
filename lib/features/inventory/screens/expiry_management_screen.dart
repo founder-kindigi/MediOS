@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/inventory_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
+
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 import '../../../models/medicine_model.dart';
@@ -37,7 +37,7 @@ class _ExpiryManagementScreenState extends State<ExpiryManagementScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Expiry Management')),
-      drawer: const AppDrawer(),
+
       body: Column(
         children: [
           Padding(

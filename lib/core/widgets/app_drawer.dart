@@ -74,15 +74,19 @@ class AppDrawer extends StatelessWidget {
             _navItem(context, Icons.people_outline_rounded, 'Users', null, route: AppRouter.users),
           _navItem(context, Icons.settings_rounded, 'Settings', 4),
           const Divider(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg, vertical: AppDimensions.sm),
-            child: TextButton.icon(
-              onPressed: () {
-                auth.logout();
-                Navigator.of(context).pushNamedAndRemoveUntil(AppRouter.login, (route) => false);
-              },
-              icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: AppDimensions.iconMd),
-              label: const Text('Logout', style: TextStyle(color: AppColors.error)),
+          Semantics(
+            button: true,
+            label: 'Logout',
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg, vertical: AppDimensions.sm),
+              child: TextButton.icon(
+                onPressed: () {
+                  auth.logout();
+                  Navigator.of(context).pushNamedAndRemoveUntil(AppRouter.login, (route) => false);
+                },
+                icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: AppDimensions.iconMd),
+                label: const Text('Logout', style: TextStyle(color: AppColors.error)),
+              ),
             ),
           ),
         ],
@@ -103,18 +107,22 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _navItem(BuildContext context, IconData icon, String title, int? tabIndex, {String? route}) {
-    return ListTile(
-      leading: Icon(icon, size: AppDimensions.iconMd, color: AppColors.textSecondary),
-      title: Text(title, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
-      dense: true,
-      onTap: () {
-        Navigator.pop(context);
-        if (tabIndex != null && onTabSelected != null) {
-          onTabSelected!(tabIndex);
-        } else if (route != null) {
-          Navigator.pushNamed(context, route);
-        }
-      },
+    return Semantics(
+      button: true,
+      label: title,
+      child: ListTile(
+        leading: Icon(icon, size: AppDimensions.iconMd, color: AppColors.textSecondary),
+        title: Text(title, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+        dense: true,
+        onTap: () {
+          Navigator.pop(context);
+          if (tabIndex != null && onTabSelected != null) {
+            onTabSelected!(tabIndex);
+          } else if (route != null) {
+            Navigator.pushNamed(context, route);
+          }
+        },
+      ),
     );
   }
 }

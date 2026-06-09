@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../auth/services/auth_service.dart';
 import '../../../models/user_model.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
+
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/validators.dart';
 
@@ -39,9 +39,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextFormField(controller: usernameCtrl, decoration: const InputDecoration(labelText: 'Username *'), validator: (v) => Validators.required(v, 'Username')),
-                    TextFormField(controller: passwordCtrl, decoration: const InputDecoration(labelText: 'Password *'), obscureText: true, validator: (v) => Validators.required(v, 'Password')),
-                    TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name *'), validator: (v) => Validators.required(v, 'Full name')),
+                    TextFormField(controller: usernameCtrl, decoration: const InputDecoration(labelText: 'Username *', hintText: 'Enter username'), onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.required(v, 'Username')),
+                    TextFormField(controller: passwordCtrl, decoration: const InputDecoration(labelText: 'Password *', hintText: 'Enter password'), obscureText: true, onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.required(v, 'Password')),
+                    TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name *', hintText: 'Enter full name'), onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.required(v, 'Full name')),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       value: role,
@@ -86,7 +86,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('User Management')),
-      drawer: const AppDrawer(),
+
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddUserDialog,
         child: const Icon(Icons.add),

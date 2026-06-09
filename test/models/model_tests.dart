@@ -2,13 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../lib/models/medicine_model.dart';
 import '../../lib/models/sale_model.dart';
 import '../../lib/models/supplier_model.dart';
-import '../../lib/models/customer_model.dart';
-import '../../lib/models/user_model.dart';
 import '../../lib/models/store_model.dart';
 import '../../lib/models/prescription_model.dart';
 import '../../lib/models/customer_order_model.dart';
 import '../../lib/models/purchase_order_model.dart';
-import '../../lib/models/return_model.dart';
 
 void main() {
   group('MedicineModel', () {

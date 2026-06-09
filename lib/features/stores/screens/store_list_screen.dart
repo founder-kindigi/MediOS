@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/store_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
+
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -40,11 +40,11 @@ class _StoreListScreenState extends State<StoreListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Store Name', prefixIcon: Icon(Icons.store)), autofocus: true, validator: (v) => Validators.required(v, 'Store name')),
+              TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Store Name *', hintText: 'Enter store name', prefixIcon: Icon(Icons.store)), autofocus: true, onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.required(v, 'Store name')),
               const SizedBox(height: 8),
-              TextFormField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address', prefixIcon: Icon(Icons.location_on))),
+              TextFormField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address', hintText: 'Enter store address', prefixIcon: Icon(Icons.location_on))),
               const SizedBox(height: 8),
-              TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone)), validator: (v) => v != null && v.isNotEmpty ? Validators.phone(v) : null),
+              TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone', hintText: 'Enter phone number', prefixIcon: Icon(Icons.phone)), validator: (v) => v != null && v.isNotEmpty ? Validators.phone(v) : null),
             ],
           ),
         ),
@@ -67,7 +67,7 @@ class _StoreListScreenState extends State<StoreListScreen> {
     final service = context.watch<StoreService>();
     return Scaffold(
       appBar: AppBar(title: const Text('Stores')),
-      drawer: const AppDrawer(),
+
       floatingActionButton: FloatingActionButton(
         onPressed: _addStore,
         child: const Icon(Icons.add),

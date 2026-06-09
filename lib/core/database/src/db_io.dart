@@ -2,7 +2,9 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common/utils/utils.dart' show firstIntValue;
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart' show getApplicationDocumentsDirectory;
+import 'package:bcrypt/bcrypt.dart';
 import '../../constants/app_constants.dart' show AppConstants;
+import '../../errors/app_error.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -72,6 +74,17 @@ class DatabaseHelper {
       await db.execute('''CREATE TABLE IF NOT EXISTS customer_orders (id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER, customer_name TEXT, order_number TEXT NOT NULL UNIQUE, order_date TEXT NOT NULL, total_amount REAL NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'pending', notes TEXT, store_id INTEGER DEFAULT 1, created_at TEXT NOT NULL, FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL)''');
       await db.execute('''CREATE TABLE IF NOT EXISTS customer_order_items (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL, medicine_id INTEGER NOT NULL, medicine_name TEXT, quantity INTEGER NOT NULL, unit_price REAL NOT NULL, total_price REAL NOT NULL, FOREIGN KEY (order_id) REFERENCES customer_orders(id) ON DELETE CASCADE, FOREIGN KEY (medicine_id) REFERENCES medicines(id))''');
     }
+    if (oldVersion < 8) {
+      final rows = await db.rawQuery('SELECT id, password_hash FROM users');
+      for (final row in rows) {
+        final id = row['id'] as int;
+        final pw = row['password_hash'] as String;
+        if (!pw.startsWith(r'$2')) {
+          final hash = BCrypt.hashpw(pw, BCrypt.gensalt());
+          await db.update('users', {'password_hash': hash}, where: 'id = ?', whereArgs: [id]);
+        }
+      }
+    }
   }
 
   Future<void> _createTables(Database db) async {
@@ -94,44 +107,73 @@ class DatabaseHelper {
     final now = DateTime.now().toIso8601String();
     await db.insert('stores', {'name': 'Main Store', 'address': '', 'phone': '', 'is_active': 1});
     await db.execute("INSERT INTO categories (name, description, created_at) VALUES ('Tablet', 'Solid dosage forms', ?), ('Capsule', 'Gelatin encapsulated medicines', ?), ('Syrup', 'Liquid oral medicines', ?), ('Injection', 'Injectable medicines', ?), ('Ointment', 'Topical applications', ?), ('Drop', 'Eye/ear/nasal drops', ?)", [now, now, now, now, now, now]);
-    await db.insert('users', {'username': 'admin', 'password_hash': 'admin123', 'full_name': 'Administrator', 'role': 'admin', 'created_at': now});
+    final adminHash = BCrypt.hashpw('admin123', BCrypt.gensalt());
+    await db.insert('users', {'username': 'admin', 'password_hash': adminHash, 'full_name': 'Administrator', 'role': 'admin', 'created_at': now});
   }
 
   Future<int> insert(String table, Map<String, dynamic> values) async {
-    final db = await database;
-    return await db.insert(table, values);
+    try {
+      final db = await database;
+      return await db.insert(table, values);
+    } catch (e) {
+      throw AppError(message: 'Failed to insert $table record', type: ErrorType.database, originalError: e);
+    }
   }
 
   Future<int> update(String table, Map<String, dynamic> values, {String? where, List<dynamic>? whereArgs}) async {
-    final db = await database;
-    return await db.update(table, values, where: where, whereArgs: whereArgs);
+    try {
+      final db = await database;
+      return await db.update(table, values, where: where, whereArgs: whereArgs);
+    } catch (e) {
+      throw AppError(message: 'Failed to update $table record', type: ErrorType.database, originalError: e);
+    }
   }
 
   Future<int> delete(String table, {String? where, List<dynamic>? whereArgs}) async {
-    final db = await database;
-    return await db.delete(table, where: where, whereArgs: whereArgs);
+    try {
+      final db = await database;
+      return await db.delete(table, where: where, whereArgs: whereArgs);
+    } catch (e) {
+      throw AppError(message: 'Failed to delete $table record', type: ErrorType.database, originalError: e);
+    }
   }
 
   Future<List<Map<String, dynamic>>> query(String table, {String? where, List<dynamic>? whereArgs, String? orderBy, int? limit, int? offset}) async {
-    final db = await database;
-    return await db.query(table, where: where, whereArgs: whereArgs, orderBy: orderBy, limit: limit, offset: offset);
+    try {
+      final db = await database;
+      return await db.query(table, where: where, whereArgs: whereArgs, orderBy: orderBy, limit: limit, offset: offset);
+    } catch (e) {
+      throw AppError(message: 'Failed to query $table', type: ErrorType.database, originalError: e);
+    }
   }
 
   Future<Map<String, dynamic>?> getById(String table, int id) async {
-    final db = await database;
-    final results = await db.query(table, where: 'id = ?', whereArgs: [id]);
-    return results.isNotEmpty ? results.first : null;
+    try {
+      final db = await database;
+      final results = await db.query(table, where: 'id = ?', whereArgs: [id]);
+      return results.isNotEmpty ? results.first : null;
+    } catch (e) {
+      throw AppError(message: 'Failed to fetch $table record', type: ErrorType.database, originalError: e);
+    }
   }
 
   Future<int> getCount(String table, {String? where, List<dynamic>? whereArgs}) async {
-    final db = await database;
-    final result = await db.rawQuery('SELECT COUNT(*) as count FROM $table${where != null ? ' WHERE $where' : ''}', whereArgs);
-    return firstIntValue(result) ?? 0;
+    try {
+      final db = await database;
+      final result = await db.rawQuery('SELECT COUNT(*) as count FROM $table${where != null ? ' WHERE $where' : ''}', whereArgs);
+      return firstIntValue(result) ?? 0;
+    } catch (e) {
+      throw AppError(message: 'Failed to count $table records', type: ErrorType.database, originalError: e);
+    }
   }
 
   Future<double> getSum(String table, String column, {String? where, List<dynamic>? whereArgs}) async {
-    final db = await database;
-    final result = await db.rawQuery('SELECT COALESCE(SUM($column), 0) as total FROM $table${where != null ? ' WHERE $where' : ''}', whereArgs);
-    return (result.first['total'] as num?)?.toDouble() ?? 0;
+    try {
+      final db = await database;
+      final result = await db.rawQuery('SELECT COALESCE(SUM($column), 0) as total FROM $table${where != null ? ' WHERE $where' : ''}', whereArgs);
+      return (result.first['total'] as num?)?.toDouble() ?? 0;
+    } catch (e) {
+      throw AppError(message: 'Failed to sum $table.$column', type: ErrorType.database, originalError: e);
+    }
   }
 }

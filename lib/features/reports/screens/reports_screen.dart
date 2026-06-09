@@ -4,7 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../services/reports_service.dart';
 import '../../inventory/services/inventory_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/app_drawer.dart';
+
 import '../../../core/utils/helpers.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -63,7 +63,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Reports & Analytics')),
-      drawer: const AppDrawer(),
+
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
