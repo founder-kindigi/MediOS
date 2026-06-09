@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/animated_list_item.dart';
+import '../../../core/widgets/responsive_wrapper.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 import '../../../core/services/invoice_service.dart';
@@ -35,7 +36,8 @@ class _SalesScreenState extends State<SalesScreen> {
         onPressed: () => Navigator.pushNamed(context, AppRouter.newSale),
         child: const Icon(Icons.add),
       ),
-      body: salesService.isLoading
+      body: ResponsiveWrapper(
+        child: salesService.isLoading
           ? const ShimmerList()
           : salesService.sales.isEmpty
               ? EmptyStateWidget(
@@ -82,6 +84,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     },
                   ),
                 ),
+        ),
     );
   }
 

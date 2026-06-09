@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/widgets/animated_list_item.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
+import '../../../core/widgets/responsive_wrapper.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 
@@ -50,7 +51,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: dashboard.isLoading
+      body: ResponsiveWrapper(
+        child: dashboard.isLoading
           ? Padding(
               padding: const EdgeInsets.all(16),
               child: ListView(
@@ -86,6 +88,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             ),
+        ),
     );
   }
 

@@ -8,6 +8,7 @@ import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/animated_list_item.dart';
+import '../../../core/widgets/responsive_wrapper.dart';
 import '../../../core/utils/validators.dart';
 import '../../../routes/app_router.dart';
 import '../../../models/supplier_model.dart';
@@ -50,7 +51,8 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
         onPressed: () => _showSupplierForm(),
         child: const Icon(Icons.add),
       ),
-      body: Column(
+      body: ResponsiveWrapper(
+        child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
@@ -109,6 +111,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                       ),
           ),
         ],
+      ),
       ),
     );
   }

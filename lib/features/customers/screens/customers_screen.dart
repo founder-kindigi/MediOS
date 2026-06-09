@@ -7,6 +7,7 @@ import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
+import '../../../core/widgets/responsive_wrapper.dart';
 import '../../../core/utils/validators.dart';
 import '../../../models/customer_model.dart';
 import '../../../routes/app_router.dart';
@@ -49,7 +50,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
         onPressed: () => _showCustomerForm(),
         child: const Icon(Icons.add),
       ),
-      body: Column(
+      body: ResponsiveWrapper(
+        child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
@@ -108,6 +110,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                       ),
           ),
         ],
+      ),
       ),
     );
   }

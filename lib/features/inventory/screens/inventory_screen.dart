@@ -7,6 +7,7 @@ import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/animated_list_item.dart';
+import '../../../core/widgets/responsive_wrapper.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 
@@ -71,7 +72,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
         onPressed: () => Navigator.pushNamed(context, '${AppRouter.inventory}/add'),
         child: const Icon(Icons.add),
       ),
-      body: Column(
+      body: ResponsiveWrapper(
+        child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
@@ -156,6 +158,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ),
           ),
         ],
+      ),
       ),
     );
   }
