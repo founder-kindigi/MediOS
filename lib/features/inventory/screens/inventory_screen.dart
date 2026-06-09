@@ -147,7 +147,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                       const Text('EXPIRING', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 11)),
                                   ],
                                 ),
-                                onTap: () => _showMedicineDetail(medicine),
+                                onTap: () => Navigator.pushNamed(context, AppRouter.medicineDetail, arguments: medicine),
                               ),
                             ),
                           );

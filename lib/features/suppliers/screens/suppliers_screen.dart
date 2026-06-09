@@ -9,6 +9,7 @@ import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/animated_list_item.dart';
 import '../../../core/utils/validators.dart';
+import '../../../routes/app_router.dart';
 import '../../../models/supplier_model.dart';
 
 class SuppliersScreen extends StatefulWidget {
@@ -89,6 +90,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                                 ),
                                 title: Text(supplier.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                                 subtitle: Text('${supplier.contactPerson ?? ''}\n${supplier.phone}'),
+                                onTap: () => Navigator.pushNamed(context, AppRouter.supplierDetail, arguments: supplier),
                                 trailing: PopupMenuButton(
                                   itemBuilder: (context) => [
                                     const PopupMenuItem(value: 'edit', child: Text('Edit')),

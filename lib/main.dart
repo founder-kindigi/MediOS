@@ -17,11 +17,13 @@ import 'features/inventory/screens/stock_adjustment_screen.dart';
 import 'features/inventory/screens/expiry_management_screen.dart';
 import 'features/inventory/screens/barcode_scan_screen.dart';
 import 'features/inventory/screens/camera_barcode_screen.dart';
+import 'features/inventory/screens/medicine_detail_screen.dart';
 import 'features/inventory/services/inventory_service.dart';
 import 'features/sales/screens/sales_screen.dart';
 import 'features/sales/screens/new_sale_screen.dart';
 import 'features/sales/services/sales_service.dart';
 import 'features/suppliers/screens/suppliers_screen.dart';
+import 'features/suppliers/screens/supplier_detail_screen.dart';
 import 'features/suppliers/services/supplier_service.dart';
 import 'features/customers/screens/customers_screen.dart';
 import 'features/customers/screens/customer_detail_screen.dart';
@@ -46,6 +48,7 @@ import 'features/returns/screens/returns_history_screen.dart';
 import 'features/returns/services/return_service.dart';
 import 'models/medicine_model.dart';
 import 'models/customer_model.dart';
+import 'models/supplier_model.dart';
 import 'routes/app_router.dart';
 import 'routes/app_transitions.dart';
 
@@ -103,6 +106,8 @@ class MediOSApp extends StatelessWidget {
               return buildRoute(settings, const MainShell(initialIndex: 0));
             case AppRouter.inventory:
               return buildRoute(settings, const InventoryScreen());
+            case AppRouter.medicineDetail:
+              return buildRoute(settings, MedicineDetailScreen(medicine: args as MedicineModel), transition: PageTransition.slideRight);
             case '${AppRouter.inventory}/add':
               return buildRoute(settings, AddMedicineScreen(medicine: args as MedicineModel?), transition: PageTransition.slideUp);
             case AppRouter.stockAdjustment:
@@ -135,6 +140,8 @@ class MediOSApp extends StatelessWidget {
               return buildRoute(settings, const NewSaleScreen(), transition: PageTransition.slideUp);
             case AppRouter.suppliers:
               return buildRoute(settings, const SuppliersScreen());
+            case AppRouter.supplierDetail:
+              return buildRoute(settings, SupplierDetailScreen(supplier: args as SupplierModel));
             case AppRouter.customers:
               return buildRoute(settings, const CustomersScreen());
             case AppRouter.customerDetail:

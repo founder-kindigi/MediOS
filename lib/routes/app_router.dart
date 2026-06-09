@@ -5,6 +5,7 @@ class AppRouter {
   static const String sales = '/sales';
   static const String newSale = '/sales/new';
   static const String suppliers = '/suppliers';
+  static const String supplierDetail = '/suppliers/detail';
   static const String customers = '/customers';
   static const String users = '/users';
   static const String purchaseOrders = '/purchase-orders';
@@ -12,6 +13,7 @@ class AppRouter {
   static const String transactions = '/transactions';
   static const String customerDetail = '/customers/detail';
   static const String reports = '/reports';
+  static const String medicineDetail = '/inventory/detail';
   static const String stockAdjustment = '/inventory/adjust';
   static const String expiryManagement = '/inventory/expiry';
   static const String barcodeScan = '/inventory/scan';
