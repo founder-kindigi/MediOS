@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/inventory_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_dimensions.dart';
 import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
@@ -176,58 +175,4 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  void _showMedicineDetail(medicine) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(medicine.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            _detailRow('Generic Name', medicine.genericName),
-            _detailRow('Manufacturer', medicine.manufacturer),
-            _detailRow('Category', medicine.categoryName ?? '-'),
-            if (medicine.barcode != null && medicine.barcode!.isNotEmpty)
-              _detailRow('Barcode', medicine.barcode!),
-            _detailRow('Purchase Price', Helpers.formatCurrency(medicine.purchasePrice)),
-            _detailRow('Selling Price', Helpers.formatCurrency(medicine.sellingPrice)),
-            _detailRow('Stock', '${medicine.stockQuantity} ${medicine.unit}'),
-            _detailRow('Reorder Level', '${medicine.reorderLevel}'),
-            _detailRow('Expiry', medicine.expiryDate != null ? Helpers.formatDate(medicine.expiryDate!) : 'N/A'),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamed(context, '${AppRouter.inventory}/add', arguments: medicine);
-                  },
-                  child: const Text('Edit'),
-                ),
-                const SizedBox(width: 8),
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _detailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
 }

@@ -38,7 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Welcome, ${user?.fullName?.split(' ').first ?? 'User'}',
+            Text('Welcome, ${user?.fullName.split(' ').first ?? 'User'}',
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             Text('Today\'s Revenue: ${Helpers.formatCurrency(dashboard.todayRevenue)}',
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: AppColors.textSecondary)),
