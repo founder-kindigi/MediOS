@@ -7,15 +7,26 @@ import '../../../models/customer_order_model.dart';
 import '../../../models/medicine_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 class _OrdItem {
   final int medicineId;
   final String medicineName;
   final double unitPrice;
-  int quantity;
+  int _quantity;
 
-  _OrdItem({required this.medicineId, required this.medicineName, required this.unitPrice, int quantity = 1}) : quantity = quantity;
-  double get total => unitPrice * quantity;
+  _OrdItem({required this.medicineId, required this.medicineName, required this.unitPrice, int quantity = 1}) : _quantity = quantity < 1 ? 1 : quantity;
+
+  int get quantity => _quantity;
+  set quantity(int val) {
+    if (val < 1) {
+      _quantity = 1;
+    } else {
+      _quantity = val;
+    }
+  }
+
+  double get total => unitPrice * _quantity;
 }
 
 class NewOrderScreen extends StatefulWidget {
@@ -33,6 +44,15 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
   String? _customerName;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CustomerService>().loadCustomers();
+      context.read<InventoryService>().loadMedicines();
+    });
+  }
+
+  @override
   void dispose() {
     _searchCtrl.dispose();
     _noteCtrl.dispose();
@@ -42,9 +62,23 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
   double get _total => _items.fold(0, (sum, i) => sum + i.total);
 
   void _addItem(MedicineModel med) {
+    if (med.stockQuantity <= 0) {
+      AppSnackbar.showError(
+        context,
+        'Cannot add "${med.name}" because it is out of stock.',
+      );
+      return;
+    }
     setState(() {
       final existing = _items.where((i) => i.medicineId == med.id).firstOrNull;
       if (existing != null) {
+        if (existing.quantity >= med.stockQuantity) {
+          AppSnackbar.showError(
+            context,
+            'Cannot add more of "${med.name}". Available stock is ${med.stockQuantity}.',
+          );
+          return;
+        }
         existing.quantity++;
       } else {
         _items.add(_OrdItem(medicineId: med.id!, medicineName: med.name, unitPrice: med.sellingPrice));
@@ -54,26 +88,35 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
 
   Future<void> _placeOrder() async {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add at least one item')));
+      AppSnackbar.showError(context, 'Add at least one item');
       return;
     }
     final service = context.read<OrderService>();
-    await service.createOrder(CustomerOrderModel(
-      customerId: _selectedCustomerId,
-      customerName: _customerName,
-      orderNumber: OrderService.generateOrderNumber(),
-      orderDate: DateTime.now(),
-      totalAmount: _total,
-      notes: _noteCtrl.text.isNotEmpty ? _noteCtrl.text : null,
-      items: _items.map((i) => CustomerOrderItemModel(
-        medicineId: i.medicineId,
-        medicineName: i.medicineName,
-        quantity: i.quantity,
-        unitPrice: i.unitPrice,
-        totalPrice: i.total,
-      )).toList(),
-    ));
-    if (mounted) Navigator.pop(context);
+    try {
+      await service.createOrder(CustomerOrderModel(
+        customerId: _selectedCustomerId,
+        customerName: _customerName,
+        orderNumber: OrderService.generateOrderNumber(),
+        orderDate: DateTime.now(),
+        totalAmount: _total,
+        notes: _noteCtrl.text.isNotEmpty ? _noteCtrl.text : null,
+        items: _items.map((i) => CustomerOrderItemModel(
+          medicineId: i.medicineId,
+          medicineName: i.medicineName,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          totalPrice: i.total,
+        )).toList(),
+      ));
+      if (mounted) {
+        AppSnackbar.showSuccess(context, 'Order placed successfully');
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.showError(context, 'Failed to place order: $e');
+      }
+    }
   }
 
   @override
@@ -81,7 +124,9 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
     final inv = context.watch<InventoryService>();
     final customers = context.watch<CustomerService>().customers;
     final searchResults = _searchCtrl.text.isNotEmpty
-        ? inv.searchMedicines(_searchCtrl.text).where((m) => m.stockQuantity > 0).toList()
+        ? inv.searchMedicines(_searchCtrl.text)
+            .where((m) => !m.isExpired)
+            .toList()
         : <MedicineModel>[];
 
     return Scaffold(
@@ -153,7 +198,20 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
                                 setState(() { if (item.quantity <= 1) _items.removeAt(index); else item.quantity--; });
                               }),
                               Text('${item.quantity}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              IconButton(icon: const Icon(Icons.add_circle_outline, size: 20), onPressed: () => setState(() => item.quantity++)),
+                              IconButton(
+                                icon: const Icon(Icons.add_circle_outline, size: 20),
+                                onPressed: () {
+                                  final medicine = inv.medicines.firstWhere((m) => m.id == item.medicineId);
+                                  if (item.quantity >= medicine.stockQuantity) {
+                                    AppSnackbar.showError(
+                                      context,
+                                      'Cannot add more of "${medicine.name}". Available stock is ${medicine.stockQuantity}.',
+                                    );
+                                    return;
+                                  }
+                                  setState(() => item.quantity++);
+                                },
+                              ),
                               const SizedBox(width: 8),
                               Text(Helpers.formatCurrency(item.total), style: const TextStyle(fontWeight: FontWeight.bold)),
                             ],

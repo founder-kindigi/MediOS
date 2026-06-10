@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import '../../../core/database/database_helper.dart';
+import '../../../core/errors/app_error.dart';
 import '../../../models/customer_model.dart';
 
 class CustomerService extends ChangeNotifier {
@@ -18,8 +19,12 @@ class CustomerService extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final maps = await _db.query('customers', orderBy: 'name ASC');
-    _customers = maps.map((m) => CustomerModel.fromMap(m)).toList();
+    try {
+      final maps = await _db.query('customers', orderBy: 'name ASC');
+      _customers = maps.map((m) => CustomerModel.fromMap(m)).toList();
+    } catch (e) {
+      debugPrint('Failed to load customers: $e');
+    }
 
     _isLoading = false;
     notifyListeners();
@@ -32,14 +37,40 @@ class CustomerService extends ChangeNotifier {
   }
 
   Future<int> updateCustomer(CustomerModel customer) async {
+    if (customer.id == null) {
+      throw AppError(
+        message: 'Cannot update customer with null ID',
+        type: ErrorType.validation,
+      );
+    }
     final result = await _db.update('customers', customer.toMap(),
         where: 'id = ?', whereArgs: [customer.id]);
+    if (result == 0) {
+      throw AppError(
+        message: 'Customer not found',
+        type: ErrorType.database,
+      );
+    }
     await loadCustomers();
     return result;
   }
 
   Future<void> deleteCustomer(int id) async {
-    await _db.delete('customers', where: 'id = ?', whereArgs: [id]);
+    final salesCount = await _db.getCount('sales', where: 'customer_id = ?', whereArgs: [id]);
+    final ordersCount = await _db.getCount('customer_orders', where: 'customer_id = ?', whereArgs: [id]);
+    if (salesCount > 0 || ordersCount > 0) {
+      throw AppError(
+        message: 'Cannot delete customer: they have associated sales or orders.',
+        type: ErrorType.validation,
+      );
+    }
+    final result = await _db.delete('customers', where: 'id = ?', whereArgs: [id]);
+    if (result == 0) {
+      throw AppError(
+        message: 'Customer not found',
+        type: ErrorType.database,
+      );
+    }
     await loadCustomers();
   }
 
@@ -49,5 +80,13 @@ class CustomerService extends ChangeNotifier {
         c.name.toLowerCase().contains(q) ||
         c.phone.contains(q)
     ).toList();
+  }
+
+  @override
+  void dispose() {
+    // Clear customers data to prevent memory leaks
+    _customers = [];
+    
+    super.dispose();
   }
 }

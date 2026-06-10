@@ -6,6 +6,7 @@ import '../../../core/widgets/search_bar_widget.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/animated_list_item.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/responsive_wrapper.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
@@ -24,8 +25,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<InventoryService>().loadMedicines();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await context.read<InventoryService>().loadMedicines();
+      } catch (e) {
+        if (mounted) {
+          AppSnackbar.showError(context, 'Failed to load inventory: $e');
+        }
+      }
     });
   }
 

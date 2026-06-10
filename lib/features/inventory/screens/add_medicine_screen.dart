@@ -80,6 +80,13 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final purchasePrice = double.tryParse(_purchasePriceCtrl.text) ?? 0.0;
+    final sellingPrice = double.tryParse(_sellingPriceCtrl.text) ?? 0.0;
+    if (sellingPrice < purchasePrice) {
+      AppSnackbar.showError(context, 'Selling price cannot be less than purchase price');
+      return;
+    }
+
     final inventory = context.read<InventoryService>();
     final medicine = MedicineModel(
       id: widget.medicine?.id,
@@ -88,11 +95,11 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
       categoryId: _selectedCategoryId,
       manufacturer: _manufacturerCtrl.text.trim(),
       unit: _unit,
-      purchasePrice: double.parse(_purchasePriceCtrl.text),
-      sellingPrice: double.parse(_sellingPriceCtrl.text),
-      wholesalePrice: double.tryParse(_wholesalePriceCtrl.text) ?? 0,
-      stockQuantity: int.parse(_stockCtrl.text),
-      reorderLevel: int.parse(_reorderCtrl.text),
+      purchasePrice: double.tryParse(_purchasePriceCtrl.text) ?? 0.0,
+      sellingPrice: double.tryParse(_sellingPriceCtrl.text) ?? 0.0,
+      wholesalePrice: double.tryParse(_wholesalePriceCtrl.text) ?? 0.0,
+      stockQuantity: int.tryParse(_stockCtrl.text) ?? 0,
+      reorderLevel: int.tryParse(_reorderCtrl.text) ?? 0,
       expiryDate: _expiryDate,
       barcode: _barcodeCtrl.text.trim().isNotEmpty ? _barcodeCtrl.text.trim() : null,
       description: _descCtrl.text.trim(),
@@ -213,7 +220,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (_) => _formKey.currentState?.validate(),
-                      validator: (v) => Validators.positiveNumber(v, 'Stock'),
+                      validator: (v) => Validators.positiveInteger(v, 'Stock'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -225,6 +232,8 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
                         hintText: '0',
                       ),
                       keyboardType: TextInputType.number,
+                      onChanged: (_) => _formKey.currentState?.validate(),
+                      validator: (v) => Validators.optionalInteger(v, 'Reorder level'),
                     ),
                   ),
                 ],
@@ -235,10 +244,15 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
                   final date = await showDatePicker(
                     context: context,
                     initialDate: _expiryDate ?? DateTime.now(),
-                    firstDate: DateTime.now(),
+                    firstDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
                     lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
                   );
-                  if (date != null) setState(() => _expiryDate = date);
+                  if (date != null) {
+                    setState(() => _expiryDate = date);
+                    if (date.isBefore(DateTime.now())) {
+                      AppSnackbar.showWarning(context, 'Warning: Selected expiry date is in the past.');
+                    }
+                  }
                 },
                 child: InputDecorator(
                   decoration: const InputDecoration(labelText: 'Expiry Date'),

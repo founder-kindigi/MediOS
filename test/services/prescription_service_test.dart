@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../test_helper.dart';
-import '../../lib/features/prescriptions/services/prescription_service.dart';
-import '../../lib/models/prescription_model.dart';
+import 'package:medios/features/prescriptions/services/prescription_service.dart';
+import 'package:medios/models/prescription_model.dart';
 
 void main() {
   late Database db;
@@ -35,7 +35,7 @@ void main() {
     await service.loadPrescriptions();
     expect(service.prescriptions.length, 1);
     expect(service.prescriptions.first.patientName, 'Ali');
-    expect(service.prescriptions.first.items?.length, 1);
+    expect(service.prescriptions.first.items.length, 1);
   });
 
   test('updateStatus changes status', () async {

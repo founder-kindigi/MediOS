@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../test_helper.dart';
-import '../../lib/features/purchase_orders/services/purchase_order_service.dart';
-import '../../lib/models/purchase_order_model.dart';
+import 'package:medios/features/purchase_orders/services/purchase_order_service.dart';
+import 'package:medios/models/purchase_order_model.dart';
 
 void main() {
   late Database db;

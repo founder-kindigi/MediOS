@@ -47,21 +47,52 @@ class CustomerOrderModel {
   final double totalAmount;
   final String status;
   final String? notes;
-  final DateTime? createdAt;
-  final List<CustomerOrderItemModel>? items;
+  final int? storeId;
+  final DateTime createdAt;
+  final List<CustomerOrderItemModel> items;
 
   CustomerOrderModel({
     this.id,
     this.customerId,
     this.customerName,
     required this.orderNumber,
-    required this.orderDate,
+    DateTime? orderDate,
     this.totalAmount = 0,
     this.status = 'pending',
     this.notes,
-    this.createdAt,
-    this.items,
-  });
+    this.storeId = 1,
+    DateTime? createdAt,
+    this.items = const [],
+  })  : orderDate = orderDate ?? DateTime.now(),
+        createdAt = createdAt ?? DateTime.now();
+
+  CustomerOrderModel copyWith({
+    int? id,
+    int? customerId,
+    String? customerName,
+    String? orderNumber,
+    DateTime? orderDate,
+    double? totalAmount,
+    String? status,
+    String? notes,
+    int? storeId,
+    DateTime? createdAt,
+    List<CustomerOrderItemModel>? items,
+  }) {
+    return CustomerOrderModel(
+      id: id ?? this.id,
+      customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+      orderNumber: orderNumber ?? this.orderNumber,
+      orderDate: orderDate ?? this.orderDate,
+      totalAmount: totalAmount ?? this.totalAmount,
+      status: status ?? this.status,
+      notes: notes ?? this.notes,
+      storeId: storeId ?? this.storeId,
+      createdAt: createdAt ?? this.createdAt,
+      items: items ?? this.items,
+    );
+  }
 
   Map<String, dynamic> toMap() => {
     if (id != null) 'id': id,
@@ -72,7 +103,8 @@ class CustomerOrderModel {
     'total_amount': totalAmount,
     'status': status,
     'notes': notes,
-    'created_at': (createdAt ?? DateTime.now()).toIso8601String(),
+    'store_id': storeId,
+    'created_at': createdAt.toIso8601String(),
   };
 
   factory CustomerOrderModel.fromMap(Map<String, dynamic> map) => CustomerOrderModel(
@@ -84,7 +116,8 @@ class CustomerOrderModel {
     totalAmount: (map['total_amount'] as num?)?.toDouble() ?? 0,
     status: map['status'] as String? ?? 'pending',
     notes: map['notes'] as String?,
-    createdAt: map['created_at'] != null ? DateTime.parse(map['created_at'] as String) : null,
-    items: map['items'] != null ? (map['items'] as List).map((i) => CustomerOrderItemModel.fromMap(i as Map<String, dynamic>)).toList() : null,
+    storeId: map['store_id'] as int? ?? 1,
+    createdAt: map['created_at'] != null ? DateTime.parse(map['created_at'] as String) : DateTime.now(),
+    items: map['items'] != null ? (map['items'] as List).map((i) => CustomerOrderItemModel.fromMap(i as Map<String, dynamic>)).toList() : const [],
   );
 }

@@ -24,6 +24,32 @@ class ReturnModel {
   }) : returnDate = returnDate ?? DateTime.now(),
        createdAt = createdAt ?? DateTime.now();
 
+  ReturnModel copyWith({
+    int? id,
+    int? saleId,
+    String? billNumber,
+    String? returnNumber,
+    DateTime? returnDate,
+    double? totalRefund,
+    String? reason,
+    String? notes,
+    DateTime? createdAt,
+    List<ReturnItemModel>? items,
+  }) {
+    return ReturnModel(
+      id: id ?? this.id,
+      saleId: saleId ?? this.saleId,
+      billNumber: billNumber ?? this.billNumber,
+      returnNumber: returnNumber ?? this.returnNumber,
+      returnDate: returnDate ?? this.returnDate,
+      totalRefund: totalRefund ?? this.totalRefund,
+      reason: reason ?? this.reason,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      items: items ?? this.items,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
@@ -55,7 +81,7 @@ class ReturnModel {
 
 class ReturnItemModel {
   final int? id;
-  final int returnId;
+  final int? returnId;
   final int medicineId;
   final String? medicineName;
   final int quantity;
@@ -64,7 +90,7 @@ class ReturnItemModel {
 
   ReturnItemModel({
     this.id,
-    this.returnId = 0,
+    this.returnId,
     required this.medicineId,
     this.medicineName,
     required this.quantity,
@@ -75,7 +101,7 @@ class ReturnItemModel {
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
-      'return_id': returnId,
+      if (returnId != null) 'return_id': returnId,
       'medicine_id': medicineId,
       'medicine_name': medicineName,
       'quantity': quantity,
@@ -87,7 +113,7 @@ class ReturnItemModel {
   factory ReturnItemModel.fromMap(Map<String, dynamic> map) {
     return ReturnItemModel(
       id: map['id'] as int?,
-      returnId: map['return_id'] as int? ?? 0,
+      returnId: map['return_id'] as int?,
       medicineId: map['medicine_id'] as int,
       medicineName: map['medicine_name'] as String?,
       quantity: map['quantity'] as int,

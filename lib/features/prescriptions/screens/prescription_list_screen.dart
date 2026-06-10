@@ -72,7 +72,11 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                         title: 'No prescriptions found',
                         subtitle: _filter != 'all' ? 'No prescriptions with status "$_filter"' : 'Create your first prescription',
                         actionLabel: _filter != 'all' ? null : 'New Prescription',
-                        onAction: _filter != 'all' ? null : () => Navigator.pushNamed(context, '/prescriptions/new'),
+                        onAction: _filter != 'all' ? null : () => Navigator.pushNamed(context, '/prescriptions/new').then((_) {
+                          if (mounted) {
+                            context.read<PrescriptionService>().loadPrescriptions();
+                          }
+                        }),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(8),
@@ -91,11 +95,11 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                                 '${p.items?.length ?? 0} items',
                               ),
                               trailing: Chip(
-                                label: Text(p.status, style: const TextStyle(fontSize: 11, color: Colors.white)),
-                                backgroundColor: _statusColor(p.status),
+                                label: Text(p.isExpired && p.status == 'active' ? 'expired' : p.status, style: const TextStyle(fontSize: 11, color: Colors.white)),
+                                backgroundColor: p.isExpired && p.status == 'active' ? Colors.redAccent : _statusColor(p.status),
                                 visualDensity: VisualDensity.compact,
                               ),
-                              onTap: () => _showDetail(p),
+                              onTap: p.id == null ? null : () => _showDetail(p),
                             ),
                           );
                         },
@@ -164,7 +168,7 @@ class _PrescriptionDetailSheet extends StatelessWidget {
             if (prescription.patientPhone != null) _field('Phone', prescription.patientPhone!),
             if (prescription.doctorName != null) _field('Doctor', prescription.doctorName!),
             _field('Date', '${prescription.prescriptionDate.day}/${prescription.prescriptionDate.month}/${prescription.prescriptionDate.year}'),
-            _field('Status', prescription.status),
+            _field('Status', prescription.isExpired && prescription.status == 'active' ? 'active (Expired)' : prescription.status),
             if (prescription.notes != null) _field('Notes', prescription.notes!),
             const Divider(),
             const Text('Items', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -185,21 +189,40 @@ class _PrescriptionDetailSheet extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _createSaleFromPrescription(context);
-                      },
+                      onPressed: prescription.isExpired
+                          ? () {
+                              AppSnackbar.showError(ctx, 'Cannot create sale from an expired prescription');
+                            }
+                          : () {
+                              Navigator.pop(ctx);
+                              _createSaleFromPrescription(context);
+                            },
                       icon: const Icon(Icons.shopping_cart),
                       label: const Text('Create Sale'),
+                      style: prescription.isExpired
+                          ? ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey,
+                              foregroundColor: Colors.white70,
+                            )
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        service.updateStatus(prescription.id!, 'completed');
-                        AppSnackbar.showSuccess(context, 'Prescription marked completed');
-                        Navigator.pop(ctx);
+                      onPressed: () async {
+                        if (prescription.id == null) return;
+                        try {
+                          await service.updateStatus(prescription.id!, 'completed');
+                          if (ctx.mounted) {
+                            AppSnackbar.showSuccess(ctx, 'Prescription marked completed');
+                            Navigator.pop(ctx);
+                          }
+                        } catch (e) {
+                          if (ctx.mounted) {
+                            AppSnackbar.showError(ctx, 'Failed to complete prescription: $e');
+                          }
+                        }
                       },
                       icon: const Icon(Icons.check),
                       label: const Text('Mark Completed'),
@@ -211,10 +234,19 @@ class _PrescriptionDetailSheet extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: TextButton.icon(
-                  onPressed: () {
-                    service.updateStatus(prescription.id!, 'cancelled');
-                    AppSnackbar.showWarning(context, 'Prescription cancelled');
-                    Navigator.pop(ctx);
+                  onPressed: () async {
+                    if (prescription.id == null) return;
+                    try {
+                      await service.updateStatus(prescription.id!, 'cancelled');
+                      if (ctx.mounted) {
+                        AppSnackbar.showWarning(ctx, 'Prescription cancelled');
+                        Navigator.pop(ctx);
+                      }
+                    } catch (e) {
+                      if (ctx.mounted) {
+                        AppSnackbar.showError(ctx, 'Failed to cancel prescription: $e');
+                      }
+                    }
                   },
                   icon: const Icon(Icons.cancel, color: AppColors.error),
                   label: const Text('Cancel Prescription', style: TextStyle(color: AppColors.error)),

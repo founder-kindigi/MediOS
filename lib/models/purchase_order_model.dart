@@ -7,6 +7,7 @@ class PurchaseOrderModel {
   final double totalAmount;
   final String status;
   final String? notes;
+  final int? storeId;
   final DateTime createdAt;
   final List<PurchaseOrderItemModel> items;
 
@@ -19,10 +20,39 @@ class PurchaseOrderModel {
     this.totalAmount = 0,
     this.status = 'pending',
     this.notes,
+    this.storeId = 1,
     DateTime? createdAt,
     this.items = const [],
   })  : orderDate = orderDate ?? DateTime.now(),
         createdAt = createdAt ?? DateTime.now();
+
+  PurchaseOrderModel copyWith({
+    int? id,
+    int? supplierId,
+    String? supplierName,
+    String? orderNumber,
+    DateTime? orderDate,
+    double? totalAmount,
+    String? status,
+    String? notes,
+    int? storeId,
+    DateTime? createdAt,
+    List<PurchaseOrderItemModel>? items,
+  }) {
+    return PurchaseOrderModel(
+      id: id ?? this.id,
+      supplierId: supplierId ?? this.supplierId,
+      supplierName: supplierName ?? this.supplierName,
+      orderNumber: orderNumber ?? this.orderNumber,
+      orderDate: orderDate ?? this.orderDate,
+      totalAmount: totalAmount ?? this.totalAmount,
+      status: status ?? this.status,
+      notes: notes ?? this.notes,
+      storeId: storeId ?? this.storeId,
+      createdAt: createdAt ?? this.createdAt,
+      items: items ?? this.items,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -34,6 +64,7 @@ class PurchaseOrderModel {
       'total_amount': totalAmount,
       'status': status,
       'notes': notes,
+      'store_id': storeId,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -48,6 +79,7 @@ class PurchaseOrderModel {
       totalAmount: (map['total_amount'] as num?)?.toDouble() ?? 0,
       status: map['status'] as String? ?? 'pending',
       notes: map['notes'] as String?,
+      storeId: map['store_id'] as int? ?? 1,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -55,7 +87,7 @@ class PurchaseOrderModel {
 
 class PurchaseOrderItemModel {
   final int? id;
-  final int purchaseOrderId;
+  final int? purchaseOrderId;
   final int medicineId;
   final String? medicineName;
   final int quantity;
@@ -64,7 +96,7 @@ class PurchaseOrderItemModel {
 
   PurchaseOrderItemModel({
     this.id,
-    this.purchaseOrderId = 0,
+    this.purchaseOrderId,
     required this.medicineId,
     this.medicineName,
     required this.quantity,
@@ -75,7 +107,7 @@ class PurchaseOrderItemModel {
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
-      'purchase_order_id': purchaseOrderId,
+      if (purchaseOrderId != null) 'purchase_order_id': purchaseOrderId,
       'medicine_id': medicineId,
       'medicine_name': medicineName,
       'quantity': quantity,
@@ -87,7 +119,7 @@ class PurchaseOrderItemModel {
   factory PurchaseOrderItemModel.fromMap(Map<String, dynamic> map) {
     return PurchaseOrderItemModel(
       id: map['id'] as int?,
-      purchaseOrderId: map['purchase_order_id'] as int? ?? 0,
+      purchaseOrderId: map['purchase_order_id'] as int?,
       medicineId: map['medicine_id'] as int,
       medicineName: map['medicine_name'] as String?,
       quantity: map['quantity'] as int,

@@ -29,11 +29,32 @@ class _ExpiryManagementScreenState extends State<ExpiryManagementScreen> {
   Widget build(BuildContext context) {
     final inventory = context.watch<InventoryService>();
     final all = inventory.medicines;
+
+    int cExpired = 0;
+    int cSoon = 0;
+    int cWatch = 0;
+    int cNone = 0;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    for (final m in all) {
+      if (m.expiryDate == null) {
+        cNone++;
+      } else {
+        final expiry = DateTime(m.expiryDate!.year, m.expiryDate!.month, m.expiryDate!.day);
+        final days = expiry.difference(today).inDays;
+        if (days <= 0) {
+          cExpired++;
+        } else if (days <= 30) {
+          cSoon++;
+        } else if (days <= 60) {
+          cWatch++;
+        }
+      }
+    }
+
     final medicines = _filtered(all);
-    final cExpired = _count(all, 'expired');
-    final cSoon = _count(all, 'soon');
-    final cWatch = _count(all, 'watch');
-    final cNone = _count(all, 'none');
 
     return Scaffold(
       appBar: AppBar(title: const Text('Expiry Management')),
@@ -128,10 +149,7 @@ class _ExpiryManagementScreenState extends State<ExpiryManagementScreen> {
     );
   }
 
-  int _count(List<MedicineModel> all, [String? group]) {
-    if (group == null) return all.length;
-    return _filtered(all, forceGroup: group).length;
-  }
+  // Removed _count helper to optimize build run to O(n)
 
   List<MedicineModel> _filtered(List<MedicineModel> all, {String? forceGroup}) {
     final group = forceGroup ?? _filter;
@@ -159,7 +177,10 @@ class _ExpiryManagementScreenState extends State<ExpiryManagementScreen> {
 
   int _daysRemaining(MedicineModel m) {
     if (m.expiryDate == null) return 9999;
-    return m.expiryDate!.difference(DateTime.now()).inDays;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final expiry = DateTime(m.expiryDate!.year, m.expiryDate!.month, m.expiryDate!.day);
+    return expiry.difference(today).inDays;
   }
 
   Color _expiryColor(int days) {

@@ -10,6 +10,11 @@ class DatabaseHelper {
     _database = db;
   }
 
+  Future<void> closeDatabase() async {}
+  Future<String> get databasePath async => '';
+  Future<int> getVersion() async => 0;
+  Future<Database> openDatabaseAtPath(String filePath) => throw UnsupportedError('openDatabaseAtPath not supported on this platform');
+
   Future<Database> get database async {
     if (_database != null) return _database!;
     throw UnsupportedError('Database not supported on this platform');

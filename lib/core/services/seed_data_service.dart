@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/foundation.dart' show debugPrint;
 import '../database/database_helper.dart';
+import '../errors/app_error.dart';
 
 class SeedDataService {
   final DatabaseHelper _db = DatabaseHelper();
@@ -27,7 +29,7 @@ class SeedDataService {
               'manufacturer': p['manufacturer'] as String? ?? '',
               'unit': 'strip',
               'barcode': p['barcode'] as String?,
-              'purchase_price': (p['purchase_price'] as num?)?.toDouble() ?? 0,
+              'purchase_price': (p['original_price'] as num?)?.toDouble() ?? 0,
               'selling_price': (p['selling_price'] as num?)?.toDouble() ?? 0,
               'stock_quantity': 0,
               'reorder_level': 10,
@@ -38,8 +40,11 @@ class SeedDataService {
           }
         });
       }
+    } on AppError {
+      debugPrint('Seeding skipped: database already populated or unhandled error');
     } catch (e) {
-      // Silently handle - seed data is optional
+      debugPrint('Failed to seed medicines data: $e');
+      debugPrint('Stack trace: ${StackTrace.current}');
     }
   }
 }

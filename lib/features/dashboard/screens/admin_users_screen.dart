@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/security/password_policy.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({super.key});
@@ -15,9 +16,16 @@ class AdminUsersScreen extends StatefulWidget {
 }
 
 class _AdminUsersScreenState extends State<AdminUsersScreen> {
+  late Future<List<UserModel>> _usersFuture;
+
   @override
   void initState() {
     super.initState();
+    _loadUsers();
+  }
+
+  void _loadUsers() {
+    _usersFuture = context.read<AuthService>().getAllUsers();
   }
 
   void _showAddUserDialog() {
@@ -40,7 +48,19 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextFormField(controller: usernameCtrl, decoration: const InputDecoration(labelText: 'Username *', hintText: 'Enter username'), onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.required(v, 'Username')),
-                    TextFormField(controller: passwordCtrl, decoration: const InputDecoration(labelText: 'Password *', hintText: 'Enter password'), obscureText: true, onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.required(v, 'Password')),
+                    TextFormField(
+                      controller: passwordCtrl,
+                      decoration: const InputDecoration(labelText: 'Password *', hintText: 'Enter password'),
+                      obscureText: true,
+                      onChanged: (_) => formKey.currentState?.validate(),
+                      validator: (v) {
+                        final reqErr = Validators.required(v, 'Password');
+                        if (reqErr != null) return reqErr;
+                        final policyErrs = PasswordPolicy.validate(v!);
+                        if (policyErrs.isNotEmpty) return policyErrs.first;
+                        return null;
+                      },
+                    ),
                     TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name *', hintText: 'Enter full name'), onChanged: (_) => formKey.currentState?.validate(), validator: (v) => Validators.required(v, 'Full name')),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
@@ -62,15 +82,22 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 onPressed: () async {
                   if (!formKey.currentState!.validate()) return;
                   final auth = context.read<AuthService>();
-                  await auth.createUser(UserModel(
+                  final result = await auth.createUser(UserModel(
                     username: usernameCtrl.text,
                     passwordHash: passwordCtrl.text,
                     fullName: nameCtrl.text,
                     role: role,
                   ));
                   if (context.mounted) {
-                    AppSnackbar.showSuccess(context, 'User created successfully');
-                    Navigator.pop(context);
+                    if (result.isSuccess) {
+                      AppSnackbar.showSuccess(context, 'User created successfully');
+                      Navigator.pop(context);
+                      setState(() {
+                        _loadUsers();
+                      });
+                    } else {
+                      AppSnackbar.showError(context, result.errorMessage ?? 'Failed to create user');
+                    }
                   }
                 },
                 child: const Text('Add'),
@@ -79,7 +106,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           ),
         );
       },
-    );
+    ).then((_) {
+      usernameCtrl.dispose();
+      passwordCtrl.dispose();
+      nameCtrl.dispose();
+    });
   }
 
   @override
@@ -92,10 +123,16 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         child: const Icon(Icons.add),
       ),
       body: FutureBuilder<List<UserModel>>(
-        future: context.read<AuthService>().getAllUsers(),
+        future: _usersFuture,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No users found'));
           }
           final users = snapshot.data!;
           return ListView.builder(

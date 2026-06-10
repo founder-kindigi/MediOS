@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../test_helper.dart';
-import '../../lib/features/stores/services/store_service.dart';
-import '../../lib/models/store_model.dart';
+import 'package:medios/features/stores/services/store_service.dart';
+import 'package:medios/models/store_model.dart';
 
 void main() {
   late Database db;
@@ -21,7 +21,7 @@ void main() {
 
   test('loadStores returns default Main Store', () {
     expect(service.stores.length, 1);
-    expect(service.stores.first.name, 'Main Store');
+    expect(service.stores.first.name, 'Test Store');
   });
 
   test('addStore creates a new store', () async {
@@ -38,6 +38,6 @@ void main() {
 
   test('selectedStore returns correct store', () {
     final s = service.selectedStore;
-    expect(s?.name, 'Main Store');
+    expect(s?.name, 'Test Store');
   });
 }

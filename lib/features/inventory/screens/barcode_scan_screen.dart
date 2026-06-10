@@ -5,6 +5,7 @@ import '../services/inventory_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
+import '../../../models/medicine_model.dart';
 
 class BarcodeScanScreen extends StatefulWidget {
   const BarcodeScanScreen({super.key});
@@ -15,7 +16,7 @@ class BarcodeScanScreen extends StatefulWidget {
 
 class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   final _barcodeCtrl = TextEditingController();
-  List<dynamic>? _results;
+  List<MedicineModel>? _results;
   String? _notFound;
 
   @override

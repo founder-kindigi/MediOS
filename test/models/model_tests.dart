@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/models/medicine_model.dart';
-import '../../lib/models/sale_model.dart';
-import '../../lib/models/supplier_model.dart';
-import '../../lib/models/store_model.dart';
-import '../../lib/models/prescription_model.dart';
-import '../../lib/models/customer_order_model.dart';
-import '../../lib/models/purchase_order_model.dart';
+import 'package:medios/models/medicine_model.dart';
+import 'package:medios/models/sale_model.dart';
+import 'package:medios/models/supplier_model.dart';
+import 'package:medios/models/store_model.dart';
+import 'package:medios/models/prescription_model.dart';
+import 'package:medios/models/customer_order_model.dart';
+import 'package:medios/models/purchase_order_model.dart';
 
 void main() {
   group('MedicineModel', () {

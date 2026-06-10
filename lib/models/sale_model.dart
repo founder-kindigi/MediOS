@@ -10,6 +10,7 @@ class SaleModel {
   final double netAmount;
   final String paymentMethod;
   final String? notes;
+  final int? storeId;
   final DateTime createdAt;
   final List<SaleItemModel> items;
 
@@ -25,6 +26,7 @@ class SaleModel {
     required this.netAmount,
     this.paymentMethod = 'cash',
     this.notes,
+    this.storeId = 1,
     DateTime? createdAt,
     this.items = const [],
   })  : saleDate = saleDate ?? DateTime.now(),
@@ -43,6 +45,7 @@ class SaleModel {
       'net_amount': netAmount,
       'payment_method': paymentMethod,
       'notes': notes,
+      'store_id': storeId,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -60,6 +63,7 @@ class SaleModel {
       netAmount: (map['net_amount'] as num).toDouble(),
       paymentMethod: map['payment_method'] as String? ?? 'cash',
       notes: map['notes'] as String?,
+      storeId: map['store_id'] as int? ?? 1,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -67,7 +71,7 @@ class SaleModel {
 
 class SaleItemModel {
   final int? id;
-  final int saleId;
+  final int? saleId;
   final int medicineId;
   final String? medicineName;
   final int quantity;
@@ -76,7 +80,7 @@ class SaleItemModel {
 
   SaleItemModel({
     this.id,
-    this.saleId = 0,
+    this.saleId,
     required this.medicineId,
     this.medicineName,
     required this.quantity,
@@ -87,7 +91,7 @@ class SaleItemModel {
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
-      'sale_id': saleId,
+      if (saleId != null) 'sale_id': saleId,
       'medicine_id': medicineId,
       'medicine_name': medicineName,
       'quantity': quantity,
@@ -99,7 +103,7 @@ class SaleItemModel {
   factory SaleItemModel.fromMap(Map<String, dynamic> map) {
     return SaleItemModel(
       id: map['id'] as int?,
-      saleId: map['sale_id'] as int? ?? 0,
+      saleId: map['sale_id'] as int?,
       medicineId: map['medicine_id'] as int,
       medicineName: map['medicine_name'] as String?,
       quantity: map['quantity'] as int,

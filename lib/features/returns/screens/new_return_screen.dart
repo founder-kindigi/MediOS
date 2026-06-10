@@ -7,6 +7,7 @@ import '../../../models/return_model.dart';
 import '../../../models/sale_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 class NewReturnScreen extends StatefulWidget {
   const NewReturnScreen({super.key});
@@ -85,28 +86,36 @@ class _NewReturnScreenState extends State<NewReturnScreen> {
       notes: _noteCtrl.text.isNotEmpty ? _noteCtrl.text : null,
     );
 
-    await returnService.processReturn(ret, items);
+    try {
+      await returnService.processReturn(ret, items);
+      await inventory.loadMedicines();
 
-    for (final item in items) {
-      await inventory.updateStock(
-        item.medicineId,
-        item.quantity,
-        'in',
-      );
-    }
-    await inventory.loadMedicines();
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Return processed - refund: ${Helpers.formatCurrency(_totalRefund)}')),
-      );
-      Navigator.pop(context);
+      if (mounted) {
+        AppSnackbar.showSuccess(
+          context,
+          'Return processed - refund: ${Helpers.formatCurrency(_totalRefund)}',
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.showError(context, 'Failed to process return: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _processing = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final salesService = context.watch<SalesService>();
+    final matchingSales = salesService.sales
+        .where((s) => _searchCtrl.text.isEmpty ||
+            s.billNumber.toLowerCase().contains(_searchCtrl.text.toLowerCase()))
+        .toList();
+    final displayedSales = matchingSales.take(10).toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Process Return')),
@@ -124,17 +133,23 @@ class _NewReturnScreenState extends State<NewReturnScreen> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 8),
-            ...salesService.sales
-              .where((s) => _searchCtrl.text.isEmpty ||
-                  s.billNumber.toLowerCase().contains(_searchCtrl.text.toLowerCase()))
-              .take(10)
-              .map((s) => ListTile(
+            ...displayedSales.map((s) => ListTile(
                 leading: const Icon(Icons.receipt),
                 title: Text(s.billNumber),
                 subtitle: Text(Helpers.formatDate(s.saleDate)),
                 trailing: Text(Helpers.formatCurrency(s.netAmount)),
                 onTap: () => _selectSale(s.id!),
               )),
+            if (matchingSales.length > 10)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Center(
+                  child: Text(
+                    'Showing 10 of ${matchingSales.length} sales. Type more to filter.',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                  ),
+                ),
+              ),
           ] else ...[
             Card(
               color: AppColors.primary.withValues(alpha: 0.05),

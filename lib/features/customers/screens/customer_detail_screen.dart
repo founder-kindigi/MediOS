@@ -23,12 +23,22 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   }
 
   Future<void> _loadSales() async {
+    if (widget.customer.id == null) {
+      if (mounted) setState(() => _sales = []);
+      return;
+    }
     final salesService = context.read<SalesService>();
-    await salesService.loadSales();
-    final customerSales = salesService.sales
-        .where((s) => s.customerId == widget.customer.id)
-        .toList();
-    setState(() => _sales = customerSales);
+    try {
+      final customerSales = await salesService.getSalesByCustomer(widget.customer.id!);
+      if (mounted) setState(() => _sales = customerSales);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _sales = []);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading sales: $e')),
+        );
+      }
+    }
   }
 
   @override

@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/reports_service.dart';
-import '../../inventory/services/inventory_service.dart';
 import '../../../core/constants/app_colors.dart';
-
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -22,6 +21,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Map<String, dynamic>? _inventoryStats;
   bool _loading = true;
   String _selectedTab = 'sales';
+  int _selectedYear = DateTime.now().year;
 
   @override
   void initState() {
@@ -32,16 +32,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
     final rs = context.read<ReportsService>();
-    final inv = context.read<InventoryService>();
 
     try {
       final results = await Future.wait([
-        rs.getMonthlyRevenue(),
+        rs.getMonthlyRevenue(year: _selectedYear),
         rs.getTopMedicines(),
         rs.getSalesByPaymentMethod(),
         rs.getSalesSummary(),
         rs.getInventoryStats(),
-        inv.loadMedicines(),
       ]);
 
       if (!mounted) return;
@@ -56,6 +54,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      AppSnackbar.showError(context, 'Failed to load report data: $e');
     }
   }
 
@@ -109,7 +108,26 @@ class _ReportsScreenState extends State<ReportsScreen> {
       children: [
         _buildSummaryRow(),
         const SizedBox(height: 24),
-        const Text('Monthly Revenue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Monthly Revenue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            DropdownButton<int>(
+              value: _selectedYear,
+              items: List.generate(5, (index) => DateTime.now().year - index)
+                  .map((year) => DropdownMenuItem(value: year, child: Text('$year')))
+                  .toList(),
+              onChanged: (year) {
+                if (year != null) {
+                  setState(() {
+                    _selectedYear = year;
+                  });
+                  _loadData();
+                }
+              },
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
         SizedBox(height: 220, child: _buildRevenueChart()),
         const SizedBox(height: 24),

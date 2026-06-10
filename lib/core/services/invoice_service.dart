@@ -2,9 +2,6 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import '../../models/sale_model.dart';
 
 class InvoiceService {
@@ -44,7 +41,7 @@ class InvoiceService {
           pw.TableHelper.fromTextArray(
             headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             headers: ['Item', 'Qty', 'Price', 'Total'],
-            data: sale.items.map((item) => [
+            data: (sale.items ?? []).map((item) => [
               item.medicineName ?? 'Item',
               '${item.quantity}',
               _formatCurrency(item.unitPrice),
@@ -75,7 +72,7 @@ class InvoiceService {
                   if (sale.discount != null && sale.discount! > 0)
                     pw.Text('-${_formatCurrency(sale.discount!)}'),
                   if (sale.tax != null && sale.tax! > 0)
-                    pw.Text(_formatCurrency(sale.totalAmount * (sale.tax! / 100))),
+                    pw.Text(_formatCurrency((sale.totalAmount - (sale.discount ?? 0.0)) * (sale.tax! / 100))),
                   pw.Divider(),
                   pw.Text(_formatCurrency(sale.netAmount),
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14)),
@@ -106,10 +103,10 @@ class InvoiceService {
 
   Future<void> shareInvoice(SaleModel sale) async {
     final pdf = await generateInvoice(sale);
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/invoice_${sale.billNumber.replaceAll('/', '_')}.pdf');
-    await file.writeAsBytes(pdf);
-    await Share.shareXFiles([XFile(file.path)], text: 'Invoice ${sale.billNumber}');
+    await Printing.sharePdf(
+      bytes: pdf,
+      filename: 'invoice_${sale.billNumber.replaceAll('/', '_')}.pdf',
+    );
   }
 
   String _formatCurrency(double amount) {

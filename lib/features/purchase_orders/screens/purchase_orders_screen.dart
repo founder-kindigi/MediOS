@@ -8,6 +8,7 @@ import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
+import '../../inventory/services/inventory_service.dart';
 
 class PurchaseOrdersScreen extends StatefulWidget {
   const PurchaseOrdersScreen({super.key});
@@ -74,7 +75,7 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
                                   style: TextStyle(fontSize: 11, color: _statusColor(order.status))),
                             ],
                           ),
-                          onTap: () => _showOrderDetail(order.id!),
+                          onTap: order.id == null ? null : () => _showOrderDetail(order.id!),
                         ),
                       );
                     },
@@ -139,20 +140,38 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   OutlinedButton(
-                    onPressed: () {
-                      poService.updateStatus(order.id!, 'received');
-                      AppSnackbar.showSuccess(context, 'Order marked as received');
-                      Navigator.pop(context);
+                    onPressed: () async {
+                      try {
+                        await poService.updateStatus(order.id!, 'received');
+                        if (context.mounted) {
+                          context.read<InventoryService>().loadMedicines();
+                          AppSnackbar.showSuccess(context, 'Order marked as received');
+                          Navigator.pop(context);
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          AppSnackbar.showError(context, 'Failed to update status: $e');
+                        }
+                      }
                     },
                     style: OutlinedButton.styleFrom(foregroundColor: AppColors.success),
                     child: const Text('Mark Received'),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton(
-                    onPressed: () {
-                      poService.updateStatus(order.id!, 'cancelled');
-                      AppSnackbar.showWarning(context, 'Purchase order cancelled');
-                      Navigator.pop(context);
+                    onPressed: () async {
+                      try {
+                        await poService.updateStatus(order.id!, 'cancelled');
+                        if (context.mounted) {
+                          context.read<InventoryService>().loadMedicines();
+                          AppSnackbar.showWarning(context, 'Purchase order cancelled');
+                          Navigator.pop(context);
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          AppSnackbar.showError(context, 'Failed to update status: $e');
+                        }
+                      }
                     },
                     style: OutlinedButton.styleFrom(foregroundColor: AppColors.error),
                     child: const Text('Cancel'),

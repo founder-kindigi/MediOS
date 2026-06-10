@@ -9,6 +9,35 @@ import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/inventory/screens/inventory_screen.dart';
 import '../../features/sales/screens/sales_screen.dart';
 
+import '../../features/dashboard/screens/admin_users_screen.dart';
+import '../../features/inventory/screens/add_medicine_screen.dart';
+import '../../features/inventory/screens/transaction_history_screen.dart';
+import '../../features/inventory/screens/stock_adjustment_screen.dart';
+import '../../features/inventory/screens/expiry_management_screen.dart';
+import '../../features/inventory/screens/barcode_scan_screen.dart';
+import '../../features/inventory/screens/camera_barcode_screen.dart';
+import '../../features/inventory/screens/medicine_detail_screen.dart';
+import '../../features/sales/screens/new_sale_screen.dart';
+import '../../features/suppliers/screens/suppliers_screen.dart';
+import '../../features/suppliers/screens/supplier_detail_screen.dart';
+import '../../features/customers/screens/customers_screen.dart';
+import '../../features/customers/screens/customer_detail_screen.dart';
+import '../../features/purchase_orders/screens/purchase_orders_screen.dart';
+import '../../features/purchase_orders/screens/new_purchase_order_screen.dart';
+import '../../features/reports/screens/reports_screen.dart';
+import '../../features/settings/screens/settings_screen.dart';
+import '../../features/stores/screens/store_list_screen.dart';
+import '../../features/prescriptions/screens/prescription_list_screen.dart';
+import '../../features/prescriptions/screens/new_prescription_screen.dart';
+import '../../features/orders/screens/order_list_screen.dart';
+import '../../features/orders/screens/new_order_screen.dart';
+import '../../features/returns/screens/new_return_screen.dart';
+import '../../features/returns/screens/returns_history_screen.dart';
+import '../../models/medicine_model.dart';
+import '../../models/customer_model.dart';
+import '../../models/supplier_model.dart';
+import '../../routes/app_transitions.dart';
+
 
 class MainShell extends StatefulWidget {
   final int initialIndex;
@@ -20,14 +49,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late int _currentIndex;
-
-  final _tabKeys = [
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-  ];
+  final _tabKeys = List.generate(5, (_) => GlobalKey<NavigatorState>());
 
   static final List<_TabConfig> _tabs = [
     _TabConfig(0, 'Dashboard', Icons.dashboard_rounded),
@@ -46,9 +68,8 @@ class _MainShellState extends State<MainShell> {
   void _onTabSelected(int index) {
     if (index == _currentIndex) {
       _tabKeys[index].currentState?.popUntil((route) => route.isFirst);
-    } else {
-      setState(() => _currentIndex = index);
     }
+    setState(() => _currentIndex = index);
   }
 
   @override
@@ -60,7 +81,10 @@ class _MainShellState extends State<MainShell> {
       body: SafeArea(
         child: isWide ? _buildWideLayout(auth) : _buildNarrowLayout(auth),
       ),
-      drawer: isWide ? null : AppDrawer(onTabSelected: _onTabSelected),
+      drawer: isWide ? null : AppDrawer(
+        onTabSelected: _onTabSelected,
+        onNavigationRequested: _onNavigationRequested,
+      ),
       bottomNavigationBar: isWide ? null : _buildBottomNav(),
     );
   }
@@ -97,9 +121,15 @@ class _MainShellState extends State<MainShell> {
               child: IconButton(
                 icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
                 tooltip: 'Logout',
-                onPressed: () {
-                  auth.logout();
-                  Navigator.pushReplacementNamed(context, AppRouter.login);
+                onPressed: () async {
+                  try {
+                    await auth.logout();
+                  } catch (e) {
+                    // Suppress error to ensure navigation runs
+                  }
+                  if (context.mounted) {
+                    Navigator.of(context, rootNavigator: true).pushReplacementNamed(AppRouter.login);
+                  }
                 },
               ),
             ),
@@ -115,15 +145,128 @@ class _MainShellState extends State<MainShell> {
     return _buildCurrentTab(auth);
   }
 
-  Widget _buildCurrentTab(AuthService auth) {
-    switch (_currentIndex) {
-      case 0: return DashboardScreen();
-      case 1: return InventoryScreen();
-      case 2: return SalesScreen();
-      case 3: return _PeopleTab(auth: auth);
-      case 4: return _MoreTab(auth: auth);
-      default: return DashboardScreen();
+  void _onNavigationRequested(String route) {
+    _tabKeys[_currentIndex].currentState?.pushNamed(route);
+  }
+
+  Route? _onGenerateRouteForTab(int tabIndex, RouteSettings settings, AuthService auth) {
+    final args = settings.arguments;
+
+    if (settings.name == '/' || settings.name == '') {
+      Widget baseScreen;
+      switch (tabIndex) {
+        case 0:
+          baseScreen = const DashboardScreen();
+          break;
+        case 1:
+          baseScreen = const InventoryScreen();
+          break;
+        case 2:
+          baseScreen = const SalesScreen();
+          break;
+        case 3:
+          baseScreen = _PeopleTab(auth: auth);
+          break;
+        case 4:
+          baseScreen = _MoreTab(auth: auth);
+          break;
+        default:
+          baseScreen = const DashboardScreen();
+      }
+      return MaterialPageRoute(
+        settings: settings,
+        builder: (_) => baseScreen,
+      );
     }
+
+    switch (settings.name) {
+      case AppRouter.inventory:
+        return buildRoute(settings, const InventoryScreen());
+      case AppRouter.medicineDetail:
+        return buildRoute(settings, MedicineDetailScreen(medicine: args as MedicineModel), transition: PageTransition.slideRight);
+      case '${AppRouter.inventory}/add':
+        return buildRoute(settings, AddMedicineScreen(medicine: args as MedicineModel?), transition: PageTransition.slideUp);
+      case AppRouter.stockAdjustment:
+        return buildRoute(settings, const StockAdjustmentScreen(), transition: PageTransition.slideUp);
+      case AppRouter.expiryManagement:
+        return buildRoute(settings, const ExpiryManagementScreen());
+      case AppRouter.barcodeScan:
+        return buildRoute(settings, const BarcodeScanScreen());
+      case AppRouter.cameraScan:
+        return buildRoute(settings, const CameraBarcodeScreen());
+      case AppRouter.stores:
+        return buildRoute(settings, const StoreListScreen());
+      case AppRouter.prescriptions:
+        return buildRoute(settings, const PrescriptionListScreen());
+      case '/prescriptions/new':
+        return buildRoute(settings, const NewPrescriptionScreen(), transition: PageTransition.slideUp);
+      case AppRouter.orders:
+        return buildRoute(settings, const OrderListScreen());
+      case '/orders/new':
+        return buildRoute(settings, const NewOrderScreen(), transition: PageTransition.slideUp);
+      case AppRouter.settings:
+        return buildRoute(settings, const SettingsScreen());
+      case AppRouter.returns:
+        return buildRoute(settings, const ReturnsHistoryScreen());
+      case AppRouter.newReturn:
+        return buildRoute(settings, const NewReturnScreen(), transition: PageTransition.slideUp);
+      case AppRouter.sales:
+        return buildRoute(settings, const SalesScreen());
+      case AppRouter.newSale:
+        return buildRoute(settings, const NewSaleScreen(), transition: PageTransition.slideUp);
+      case AppRouter.suppliers:
+        return buildRoute(settings, const SuppliersScreen());
+      case AppRouter.supplierDetail:
+        return buildRoute(settings, SupplierDetailScreen(supplier: args as SupplierModel));
+      case AppRouter.customers:
+        return buildRoute(settings, const CustomersScreen());
+      case AppRouter.customerDetail:
+        return buildRoute(settings, CustomerDetailScreen(customer: args as CustomerModel));
+      case AppRouter.transactions:
+        return buildRoute(settings, const TransactionHistoryScreen());
+      case AppRouter.reports:
+        return buildRoute(settings, const ReportsScreen());
+      case AppRouter.purchaseOrders:
+        return buildRoute(settings, const PurchaseOrdersScreen());
+      case AppRouter.newPurchaseOrder:
+        return buildRoute(settings, const NewPurchaseOrderScreen(), transition: PageTransition.slideUp);
+      case AppRouter.users:
+        return buildRoute(settings, const AdminUsersScreen());
+      default:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const Scaffold(
+            body: Center(
+              child: Text('Page not found'),
+            ),
+          ),
+        );
+    }
+  }
+
+  Widget _buildCurrentTab(AuthService auth) {
+    return IndexedStack(
+      index: _currentIndex,
+      children: List.generate(5, (index) {
+        final isSelected = index == _currentIndex;
+        return PopScope(
+          canPop: !isSelected || !(_tabKeys[index].currentState?.canPop() ?? false),
+          onPopInvoked: (didPop) async {
+            if (didPop) return;
+            if (isSelected) {
+              final navigator = _tabKeys[index].currentState;
+              if (navigator != null && navigator.canPop()) {
+                navigator.pop();
+              }
+            }
+          },
+          child: Navigator(
+            key: _tabKeys[index],
+            onGenerateRoute: (settings) => _onGenerateRouteForTab(index, settings, auth),
+          ),
+        );
+      }),
+    );
   }
 
   Widget _buildBottomNav() {
@@ -252,9 +395,15 @@ class _MoreTab extends StatelessWidget {
               label: 'Logout',
               child: Center(
                 child: TextButton.icon(
-                  onPressed: () {
-                    auth.logout();
-                    Navigator.pushReplacementNamed(context, AppRouter.login);
+                  onPressed: () async {
+                    try {
+                      await auth.logout();
+                    } catch (e) {
+                      // Suppress error to ensure navigation runs
+                    }
+                    if (context.mounted) {
+                      Navigator.of(context, rootNavigator: true).pushReplacementNamed(AppRouter.login);
+                    }
                   },
                   icon: const Icon(Icons.logout_rounded, color: AppColors.error),
                   label: const Text('Logout', style: TextStyle(color: AppColors.error)),

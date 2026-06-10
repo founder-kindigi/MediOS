@@ -37,20 +37,23 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
       return;
     }
     if (!_formKey.currentState!.validate()) return;
-    final qty = int.parse(_qtyCtrl.text);
-    if (_adjustmentType == 'out' && qty > _selectedMedicine!.stockQuantity) {
-      AppSnackbar.showError(context, 'Not enough stock (available: ${_selectedMedicine!.stockQuantity})');
+    
+    final inventory = context.read<InventoryService>();
+    final qty = int.tryParse(_qtyCtrl.text) ?? 0;
+    
+    // Query fresh stock level from database to prevent race conditions
+    final currentStock = await inventory.getStockQuantity(_selectedMedicine!.id!);
+    if (_adjustmentType == 'out' && qty > currentStock) {
+      AppSnackbar.showError(context, 'Not enough stock (available: $currentStock)');
       return;
     }
 
-    final inventory = context.read<InventoryService>();
     await inventory.updateStock(
       _selectedMedicine!.id!,
       qty,
       _adjustmentType,
+      notes: 'Adjustment: $_reason',
     );
-
-    await inventory.getTransactionHistory(); // no-op, just to refresh
 
     if (mounted) {
       AppSnackbar.showSuccess(context, 'Stock adjusted successfully');
@@ -133,7 +136,7 @@ class _StockAdjustmentScreenState extends State<StockAdjustmentScreen> {
             controller: _qtyCtrl,
             decoration: const InputDecoration(labelText: 'Quantity *'),
             keyboardType: TextInputType.number,
-            validator: (v) => Validators.positiveNumber(v, 'Quantity'),
+            validator: (v) => Validators.positiveInteger(v, 'Quantity'),
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(

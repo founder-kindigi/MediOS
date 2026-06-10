@@ -58,7 +58,7 @@ class AppTheme {
       ),
 
       // --- Card ---
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: AppDimensions.cardElevation,
         shadowColor: AppColors.primary.withValues(alpha: 0.08),
         color: AppColors.surface,
@@ -205,7 +205,7 @@ class AppTheme {
       ),
 
       // --- Dialog ---
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
@@ -358,7 +358,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
       ),
 
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: AppDimensions.cardElevation,
         color: const Color(0xFF1F2937),
         surfaceTintColor: Colors.transparent,

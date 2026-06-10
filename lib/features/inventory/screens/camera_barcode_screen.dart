@@ -43,7 +43,13 @@ class _CameraBarcodeScreenState extends State<CameraBarcodeScreen> {
     ).toList();
     if (matched.isNotEmpty) {
       final m = matched.first;
-      Navigator.pushNamed(context, '${AppRouter.inventory}/add', arguments: m);
+      Navigator.pushNamed(context, '${AppRouter.inventory}/add', arguments: m).then((_) {
+        if (mounted) {
+          setState(() {
+            _scanning = true;
+          });
+        }
+      });
     } else {
       Navigator.pop(context, code);
     }

@@ -44,6 +44,7 @@ class PrescriptionItem {
 
 class PrescriptionModel {
   final int? id;
+  final int? storeId;
   final String patientName;
   final String? patientPhone;
   final String? doctorName;
@@ -51,10 +52,11 @@ class PrescriptionModel {
   final String? notes;
   final String status;
   final DateTime? createdAt;
-  final List<PrescriptionItem>? items;
+  final List<PrescriptionItem> items;
 
   PrescriptionModel({
     this.id,
+    this.storeId = 1,
     required this.patientName,
     this.patientPhone,
     this.doctorName,
@@ -62,11 +64,40 @@ class PrescriptionModel {
     this.notes,
     this.status = 'active',
     this.createdAt,
-    this.items,
+    this.items = const [],
   });
+
+  bool get isExpired => DateTime.now().difference(prescriptionDate).inDays > 30;
+
+  PrescriptionModel copyWith({
+    int? id,
+    int? storeId,
+    String? patientName,
+    String? patientPhone,
+    String? doctorName,
+    DateTime? prescriptionDate,
+    String? notes,
+    String? status,
+    DateTime? createdAt,
+    List<PrescriptionItem>? items,
+  }) {
+    return PrescriptionModel(
+      id: id ?? this.id,
+      storeId: storeId ?? this.storeId,
+      patientName: patientName ?? this.patientName,
+      patientPhone: patientPhone ?? this.patientPhone,
+      doctorName: doctorName ?? this.doctorName,
+      prescriptionDate: prescriptionDate ?? this.prescriptionDate,
+      notes: notes ?? this.notes,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      items: items ?? this.items,
+    );
+  }
 
   Map<String, dynamic> toMap() => {
     if (id != null) 'id': id,
+    'store_id': storeId,
     'patient_name': patientName,
     'patient_phone': patientPhone,
     'doctor_name': doctorName,
@@ -78,6 +109,7 @@ class PrescriptionModel {
 
   factory PrescriptionModel.fromMap(Map<String, dynamic> map) => PrescriptionModel(
     id: map['id'] as int?,
+    storeId: map['store_id'] as int? ?? 1,
     patientName: map['patient_name'] as String,
     patientPhone: map['patient_phone'] as String?,
     doctorName: map['doctor_name'] as String?,
@@ -85,6 +117,6 @@ class PrescriptionModel {
     notes: map['notes'] as String?,
     status: map['status'] as String? ?? 'active',
     createdAt: map['created_at'] != null ? DateTime.parse(map['created_at'] as String) : null,
-    items: map['items'] != null ? (map['items'] as List).map((i) => PrescriptionItem.fromMap(i as Map<String, dynamic>)).toList() : null,
+    items: map['items'] != null ? (map['items'] as List).map((i) => PrescriptionItem.fromMap(i as Map<String, dynamic>)).toList() : const [],
   );
 }

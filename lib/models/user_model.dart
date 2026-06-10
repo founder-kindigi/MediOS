@@ -40,4 +40,22 @@ class UserModel {
   Map<String, dynamic> toJson() => toMap();
   factory UserModel.fromJson(Map<String, dynamic> json) =>
       UserModel.fromMap(json);
+
+  UserModel copyWith({
+    int? id,
+    String? username,
+    String? passwordHash,
+    String? fullName,
+    String? role,
+    DateTime? createdAt,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      passwordHash: passwordHash ?? this.passwordHash,
+      fullName: fullName ?? this.fullName,
+      role: role ?? this.role,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

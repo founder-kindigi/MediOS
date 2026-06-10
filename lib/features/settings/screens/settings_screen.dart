@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:get_it/get_it.dart';
 import '../services/settings_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/errors/app_error.dart';
@@ -11,6 +12,7 @@ import '../../../core/utils/validators.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/services/biometric_auth_service.dart';
 import '../../../core/providers/theme_provider.dart';
+import 'backup_management_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -22,6 +24,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   Map<String, dynamic>? _info;
   bool _loadingInfo = true;
+  bool _biometricEnabled = false;
 
   @override
   void initState() {
@@ -31,7 +34,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadInfo() async {
     final info = await context.read<SettingsService>().getAppInfo();
-    if (mounted) setState(() { _info = info; _loadingInfo = false; });
+    final bioEnabled = await GetIt.instance<BiometricAuthService>().isEnabled();
+    if (mounted) {
+      setState(() {
+        _info = info;
+        _biometricEnabled = bioEnabled;
+        _loadingInfo = false;
+      });
+    }
   }
 
   Future<void> _exportDb() async {
@@ -92,7 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsService>();
     final auth = context.watch<AuthService>();
-    final biometric = BiometricAuthService();
+    final biometric = GetIt.instance<BiometricAuthService>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -173,28 +183,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Card(
-                    child: FutureBuilder<bool>(
-                      future: biometric.isEnabled(),
-                      builder: (ctx, snap) {
-                        final enabled = snap.data ?? false;
-                        return SwitchListTile(
-                          secondary: const Icon(Icons.fingerprint, color: AppColors.primary),
-                          title: const Text('Biometric Login'),
-                          subtitle: Text(enabled ? 'Enabled' : 'Disabled'),
-                          value: enabled,
-                          onChanged: (v) async {
-                            if (v) {
-                              final authed = await biometric.authenticate();
-                              if (authed && mounted) {
-                                await biometric.enable(auth.currentUser?.username ?? '');
-                                setState(() {});
+                    child: SwitchListTile(
+                      secondary: const Icon(Icons.fingerprint, color: AppColors.primary),
+                      title: const Text('Biometric Login'),
+                      subtitle: Text(_biometricEnabled ? 'Enabled' : 'Disabled'),
+                      value: _biometricEnabled,
+                      onChanged: (v) async {
+                        try {
+                          if (v) {
+                            final authed = await biometric.authenticate();
+                            if (authed && mounted) {
+                              await biometric.enable(auth.currentUser?.username ?? '');
+                              final enabled = await biometric.isEnabled();
+                              setState(() {
+                                _biometricEnabled = enabled;
+                              });
+                              if (!enabled && mounted) {
+                                AppSnackbar.showError(context, 'Failed to enable biometric login: storage error');
                               }
-                            } else {
-                              await biometric.disable();
-                              if (mounted) setState(() {});
                             }
-                          },
-                        );
+                          } else {
+                            await biometric.disable();
+                            final enabled = await biometric.isEnabled();
+                            setState(() {
+                              _biometricEnabled = enabled;
+                            });
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            AppSnackbar.showError(context, e.toString());
+                          }
+                        }
                       },
                     ),
                   ),
@@ -206,43 +225,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Card(
                   child: Column(
                     children: [
+                      if (!kIsWeb) ...[
+                        ListTile(
+                          leading: const Icon(Icons.backup, color: AppColors.primary),
+                          title: const Text('Backup Management'),
+                          subtitle: const Text('Create, restore, and manage backups'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const BackupManagementScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.download, color: AppColors.secondary),
+                          title: const Text('Import Database'),
+                          subtitle: const Text('Restore from a .db file'),
+                          trailing: settings.isProcessing
+                              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.chevron_right),
+                          onTap: settings.isProcessing ? null : () async {
+                            try {
+                              await settings.importDatabase();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Database imported. Restart app to apply.')),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Import failed: $e')),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                        const Divider(height: 1),
+                      ],
                       ListTile(
-                        leading: const Icon(Icons.download, color: AppColors.primary),
-                        title: const Text('Import Database'),
-                        subtitle: const Text('Restore from a .db file'),
-                        trailing: settings.isProcessing
-                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.chevron_right),
-                        onTap: settings.isProcessing ? null : () async {
-                          try {
-                            await settings.importDatabase();
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Database imported. Restart app to apply.')),
-                              );
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Import failed: $e')),
-                              );
-                            }
-                          }
-                        },
-                      ),
-                      const Divider(height: 1),
-                      FutureBuilder<String?>(
-                        future: settings.getLastSyncTime(),
-                        builder: (ctx, snap) {
-                          final lastSync = snap.data;
-                          return ListTile(
-                            leading: const Icon(Icons.sync, color: AppColors.secondary),
-                            title: const Text('Last Sync'),
-                            subtitle: Text(lastSync != null
-                                ? DateTime.parse(lastSync).toLocal().toString().substring(0, 19)
-                                : 'Never'),
-                          );
-                        },
+                        leading: const Icon(Icons.sync, color: AppColors.textSecondary),
+                        title: const Text('Last Sync'),
+                        subtitle: Text(settings.lastSyncTime != null
+                            ? DateTime.parse(settings.lastSyncTime!).toLocal().toString().substring(0, 19)
+                            : 'Never'),
                       ),
                     ],
                   ),
@@ -254,47 +284,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Card(
                   child: Column(
                     children: [
-                      FutureBuilder<double>(
-                        future: settings.getDefaultTaxRate(),
-                        builder: (ctx, snap) {
-                          final rate = snap.data ?? 0;
-                          return ListTile(
-                            leading: const Icon(Icons.percent, color: AppColors.primary),
-                            title: const Text('Default Tax Rate'),
-                            subtitle: Text('$rate%'),
-                            trailing: const Icon(Icons.edit),
-                            onTap: () async {
-                              final ctrl = TextEditingController(text: rate.toString());
-                              final formKey = GlobalKey<FormState>();
-                              final result = await showDialog<double>(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('Default Tax Rate'),
-                                  content: Form(
-                                    key: formKey,
-                                    child: TextFormField(
-                                      controller: ctrl,
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(labelText: 'Tax Rate (%)'),
-                                      validator: (v) => Validators.positiveNumber(v, 'Tax rate'),
-                                    ),
+                      ListTile(
+                        leading: const Icon(Icons.percent, color: AppColors.primary),
+                        title: const Text('Default Tax Rate'),
+                        subtitle: Text('${settings.defaultTaxRate}%'),
+                        trailing: const Icon(Icons.edit),
+                        onTap: () async {
+                          final ctrl = TextEditingController(text: settings.defaultTaxRate.toString());
+                          final formKey = GlobalKey<FormState>();
+                          try {
+                            final result = await showDialog<double>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Default Tax Rate'),
+                                content: Form(
+                                  key: formKey,
+                                  child: TextFormField(
+                                    controller: ctrl,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(labelText: 'Tax Rate (%)'),
+                                    validator: (v) => Validators.positiveNumber(v, 'Tax rate'),
                                   ),
-                                  actions: [
-                                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                                    ElevatedButton(onPressed: () {
-                                      if (!formKey.currentState!.validate()) return;
-                                      Navigator.pop(ctx, double.tryParse(ctrl.text));
-                                    }, child: const Text('Save')),
-                                  ],
                                 ),
-                              );
-                              if (result != null && mounted) {
-                                await settings.setDefaultTaxRate(result);
-                                AppSnackbar.showSuccess(context, 'Tax rate updated');
-                                setState(() {});
-                              }
-                            },
-                          );
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                  ElevatedButton(onPressed: () {
+                                    if (!formKey.currentState!.validate()) return;
+                                    Navigator.pop(ctx, double.tryParse(ctrl.text));
+                                  }, child: const Text('Save')),
+                                ],
+                              ),
+                            );
+                            if (result != null && mounted) {
+                              await settings.setDefaultTaxRate(result);
+                              AppSnackbar.showSuccess(context, 'Tax rate updated');
+                            }
+                          } finally {
+                            ctrl.dispose();
+                          }
                         },
                       ),
                       const Divider(height: 1),
@@ -309,16 +336,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Card(
                   child: Column(
                     children: [
-                      ListTile(
-                        leading: const Icon(Icons.backup, color: AppColors.primary),
-                        title: const Text('Export Database'),
-                        subtitle: const Text('Share a backup of the entire database'),
-                        trailing: settings.isProcessing
-                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.chevron_right),
-                        onTap: settings.isProcessing ? null : _exportDb,
-                      ),
-                      const Divider(height: 1),
+                      if (!kIsWeb) ...[
+                        ListTile(
+                          leading: const Icon(Icons.backup, color: AppColors.primary),
+                          title: const Text('Export Database'),
+                          subtitle: const Text('Share a backup of the entire database'),
+                          trailing: settings.isProcessing
+                              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.chevron_right),
+                          onTap: settings.isProcessing ? null : _exportDb,
+                        ),
+                        const Divider(height: 1),
+                      ],
                       ListTile(
                         leading: const Icon(Icons.table_chart, color: AppColors.secondary),
                         title: const Text('Export Medicines as CSV'),
@@ -391,51 +420,59 @@ class _CouponSectionState extends State<_CouponSection> {
     final minCtrl = TextEditingController(text: '0');
     final formKey = GlobalKey<FormState>();
     String type = 'percentage';
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Add Coupon'),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(controller: codeCtrl, decoration: const InputDecoration(labelText: 'Coupon Code'), autofocus: true, validator: (v) => Validators.required(v, 'Coupon code')),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: type,
-                  decoration: const InputDecoration(labelText: 'Type'),
-                  items: const [
-                    DropdownMenuItem(value: 'percentage', child: Text('Percentage')),
-                    DropdownMenuItem(value: 'flat', child: Text('Flat Amount')),
-                  ],
-                  onChanged: (v) => setDialogState(() => type = v ?? 'percentage'),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(controller: valueCtrl, decoration: InputDecoration(labelText: type == 'percentage' ? 'Discount %' : 'Discount Amount'), keyboardType: TextInputType.number, validator: (v) => Validators.positiveNumber(v, 'Discount value')),
-                const SizedBox(height: 8),
-                TextFormField(controller: minCtrl, decoration: const InputDecoration(labelText: 'Min Purchase'), keyboardType: TextInputType.number, validator: (v) => v != null && v.isNotEmpty ? Validators.positiveNumber(v, 'Min purchase') : null),
-              ],
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: const Text('Add Coupon'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(controller: codeCtrl, decoration: const InputDecoration(labelText: 'Coupon Code'), autofocus: true, validator: (v) => Validators.required(v, 'Coupon code')),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: type,
+                    decoration: const InputDecoration(labelText: 'Type'),
+                    items: const [
+                      DropdownMenuItem(value: 'percentage', child: Text('Percentage')),
+                      DropdownMenuItem(value: 'flat', child: Text('Flat Amount')),
+                    ],
+                    onChanged: (v) => setDialogState(() => type = v ?? 'percentage'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(controller: valueCtrl, decoration: InputDecoration(labelText: type == 'percentage' ? 'Discount %' : 'Discount Amount'), keyboardType: TextInputType.number, validator: (v) => Validators.positiveNumber(v, 'Discount value')),
+                  const SizedBox(height: 8),
+                  TextFormField(controller: minCtrl, decoration: const InputDecoration(labelText: 'Min Purchase'), keyboardType: TextInputType.number, validator: (v) => v != null && v.isNotEmpty ? Validators.positiveNumber(v, 'Min purchase') : null),
+                ],
+              ),
             ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+              ElevatedButton(onPressed: () { if (formKey.currentState!.validate()) Navigator.pop(ctx, true); }, child: const Text('Save')),
+            ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            ElevatedButton(onPressed: () { if (formKey.currentState!.validate()) Navigator.pop(ctx, true); }, child: const Text('Save')),
-          ],
         ),
-      ),
-    );
-    if (result == true) {
-      await widget.settings.addCoupon({
-        'code': codeCtrl.text.trim().toUpperCase(),
-        'type': type,
-        'value': double.tryParse(valueCtrl.text) ?? 10,
-        'min_purchase': double.tryParse(minCtrl.text) ?? 0,
-        'is_active': true,
-      });
-      AppSnackbar.showSuccess(context, 'Coupon added');
-      _load();
+      );
+      if (result == true) {
+        await widget.settings.addCoupon({
+          'code': codeCtrl.text.trim().toUpperCase(),
+          'type': type,
+          'value': double.tryParse(valueCtrl.text) ?? 10,
+          'min_purchase': double.tryParse(minCtrl.text) ?? 0,
+          'is_active': true,
+        });
+        await _load();
+        if (mounted) {
+          AppSnackbar.showSuccess(context, 'Coupon added');
+        }
+      }
+    } finally {
+      codeCtrl.dispose();
+      valueCtrl.dispose();
+      minCtrl.dispose();
     }
   }
 
@@ -466,11 +503,13 @@ class _CouponSectionState extends State<_CouponSection> {
                     actions: [
                       TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                       ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.pop(ctx);
-                          widget.settings.removeCoupon(c['code'] as String);
-                          AppSnackbar.showSuccess(context, 'Coupon removed');
-                          _load();
+                          await widget.settings.removeCoupon(c['code'] as String);
+                          await _load();
+                          if (context.mounted) {
+                            AppSnackbar.showSuccess(context, 'Coupon removed');
+                          }
                         },
                         style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
                         child: const Text('Delete'),

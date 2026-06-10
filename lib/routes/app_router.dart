@@ -24,4 +24,5 @@ class AppRouter {
   static const String settings = '/settings';
   static const String returns = '/returns';
   static const String newReturn = '/returns/new';
+  static const String firstTimeSetup = '/first-time-setup';
 }

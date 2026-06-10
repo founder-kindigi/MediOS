@@ -1,12 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/inventory_service.dart';
 import '../../../models/medicine_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 class MedicineDetailScreen extends StatelessWidget {
   final MedicineModel medicine;
   const MedicineDetailScreen({super.key, required this.medicine});
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Medicine'),
+        content: Text('Are you sure you want to delete "${medicine.name}"? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                if (medicine.id != null) {
+                  await context.read<InventoryService>().deleteMedicine(medicine.id!);
+                  if (context.mounted) {
+                    AppSnackbar.showSuccess(context, 'Medicine deleted successfully');
+                    Navigator.pop(context);
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AppSnackbar.showError(context, 'Failed to delete medicine: $e');
+                }
+              }
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +59,13 @@ class MedicineDetailScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
+            tooltip: 'Edit Medicine',
             onPressed: () => Navigator.pushNamed(context, '${AppRouter.inventory}/add', arguments: m),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+            tooltip: 'Delete Medicine',
+            onPressed: () => _confirmDelete(context),
           ),
         ],
       ),

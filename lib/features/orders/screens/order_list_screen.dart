@@ -8,6 +8,7 @@ import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../models/customer_order_model.dart';
+import '../../inventory/services/inventory_service.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -69,7 +70,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
                         title: 'No orders found',
                         subtitle: _filter != 'all' ? 'No orders with status "$_filter"' : 'Create your first customer order',
                         actionLabel: _filter != 'all' ? null : 'New Order',
-                        onAction: _filter != 'all' ? null : () => Navigator.pushNamed(context, '/orders/new'),
+                        onAction: _filter != 'all' ? null : () => Navigator.pushNamed(context, '/orders/new').then((_) {
+                          if (mounted) {
+                            context.read<OrderService>().loadOrders();
+                          }
+                        }),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(8),
@@ -89,7 +94,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                 backgroundColor: _statusColor(o.status),
                                 visualDensity: VisualDensity.compact,
                               ),
-                              onTap: () => _showDetail(o),
+                              onTap: o.id == null ? null : () => _showDetail(o),
                             ),
                           );
                         },
@@ -177,10 +182,19 @@ class _OrderDetailSheet extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        service.updateStatus(order.id!, 'fulfilled');
-                        AppSnackbar.showSuccess(context, 'Order fulfilled');
-                        Navigator.pop(ctx);
+                      onPressed: () async {
+                        try {
+                          await service.updateStatus(order.id!, 'fulfilled');
+                          if (ctx.mounted) {
+                            context.read<InventoryService>().loadMedicines();
+                            AppSnackbar.showSuccess(context, 'Order fulfilled');
+                            Navigator.pop(ctx);
+                          }
+                        } catch (e) {
+                          if (ctx.mounted) {
+                            AppSnackbar.showError(context, 'Failed to fulfill order: $e');
+                          }
+                        }
                       },
                       icon: const Icon(Icons.check_circle),
                       label: const Text('Mark Fulfilled'),
@@ -190,10 +204,19 @@ class _OrderDetailSheet extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        service.updateStatus(order.id!, 'cancelled');
-                        AppSnackbar.showWarning(context, 'Order cancelled');
-                        Navigator.pop(ctx);
+                      onPressed: () async {
+                        try {
+                          await service.updateStatus(order.id!, 'cancelled');
+                          if (ctx.mounted) {
+                            context.read<InventoryService>().loadMedicines();
+                            AppSnackbar.showWarning(context, 'Order cancelled');
+                            Navigator.pop(ctx);
+                          }
+                        } catch (e) {
+                          if (ctx.mounted) {
+                            AppSnackbar.showError(context, 'Failed to cancel order: $e');
+                          }
+                        }
                       },
                       icon: const Icon(Icons.cancel),
                       label: const Text('Cancel'),

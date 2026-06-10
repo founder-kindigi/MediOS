@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../test_helper.dart';
-import '../../lib/features/suppliers/services/supplier_service.dart';
-import '../../lib/models/supplier_model.dart';
+import 'package:medios/features/suppliers/services/supplier_service.dart';
+import 'package:medios/models/supplier_model.dart';
 
 void main() {
   late Database db;

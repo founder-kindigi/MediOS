@@ -7,7 +7,9 @@ import '../../../models/sale_model.dart';
 import '../../../models/medicine_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_snackbar.dart';
+import '../../../models/prescription_model.dart';
 import '../../../core/utils/helpers.dart';
+import '../../customers/services/customer_service.dart';
 
 class NewSaleScreen extends StatefulWidget {
   const NewSaleScreen({super.key});
@@ -22,12 +24,44 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   final _couponCtrl = TextEditingController();
   List<_SaleItem> _items = [];
   int? _selectedCustomerId;
+  String? _customerName;
   String _paymentMethod = 'cash';
-  double _discount = 0;
   double _tax = 0;
   bool _isWholesale = false;
   String _couponCode = '';
-  double _couponDiscount = 0;
+  Map<String, dynamic>? _appliedCoupon;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CustomerService>().loadCustomers();
+      context.read<InventoryService>().loadMedicines();
+      final settings = context.read<SettingsService>();
+      setState(() {
+        _tax = settings.defaultTaxRate;
+      });
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is PrescriptionModel) {
+        final inventory = context.read<InventoryService>();
+        setState(() {
+          _noteCtrl.text = 'Prescription #${args.id}';
+          _items = (args.items ?? []).map((item) {
+            final med = inventory.medicines.where((m) => m.id == item.medicineId).firstOrNull;
+            final price = med != null
+                ? (_isWholesale && med.wholesalePrice > 0 ? med.wholesalePrice : med.sellingPrice)
+                : 0.0;
+            return _SaleItem(
+              medicineId: item.medicineId,
+              medicineName: item.medicineName,
+              unitPrice: price,
+              quantity: item.quantity,
+            );
+          }).toList();
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -39,12 +73,39 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   double get _subtotal => _items.fold(0, (sum, item) => sum + item.total);
   double get _taxAmount => _subtotal * (_tax / 100);
-  double get _netAmount => _subtotal + _taxAmount - _discount - _couponDiscount;
+  
+  double get _couponDiscount {
+    if (_appliedCoupon == null) return 0.0;
+    
+    // Validate min_purchase dynamically
+    final minPurchase = (_appliedCoupon!['min_purchase'] as num?)?.toDouble() ?? 0.0;
+    if (_subtotal < minPurchase) return 0.0;
+    
+    final value = (_appliedCoupon!['value'] as num).toDouble();
+    final type = _appliedCoupon!['type'] as String;
+    return type == 'percentage' ? _subtotal * value / 100 : value;
+  }
+
+  double get _netAmount => _subtotal + _taxAmount - _couponDiscount;
 
   void _addItem(MedicineModel medicine) {
+    if (medicine.stockQuantity <= 0) {
+      AppSnackbar.showError(
+        context,
+        'Cannot add "${medicine.name}" because it is out of stock.',
+      );
+      return;
+    }
     setState(() {
       final existing = _items.where((i) => i.medicineId == medicine.id).firstOrNull;
       if (existing != null) {
+        if (existing.quantity >= medicine.stockQuantity) {
+          AppSnackbar.showError(
+            context,
+            'Cannot add more of "${medicine.name}". Available stock is ${medicine.stockQuantity}.',
+          );
+          return;
+        }
         existing.quantity++;
       } else {
         final price = _isWholesale && medicine.wholesalePrice > 0
@@ -67,36 +128,32 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final coupon = await settings.validateCoupon(code, _subtotal);
     if (coupon == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid or expired coupon')),
-        );
+        AppSnackbar.showError(context, 'Invalid or expired coupon, or min purchase limit not met.');
       }
       return;
     }
-    final value = (coupon['value'] as num).toDouble();
-    final type = coupon['type'] as String;
     setState(() {
       _couponCode = code;
-      _couponDiscount = type == 'percentage' ? _subtotal * value / 100 : value;
+      _appliedCoupon = coupon;
     });
   }
 
   Future<void> _completeSale() async {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one item')),
-      );
+      AppSnackbar.showError(context, 'Add at least one item');
       return;
     }
 
     final salesService = context.read<SalesService>();
     final inventoryService = context.read<InventoryService>();
 
+    final billNumber = 'BILL-${DateTime.now().millisecondsSinceEpoch}';
     final sale = SaleModel(
+      billNumber: billNumber,
       customerId: _selectedCustomerId,
-      billNumber: Helpers.generateBillNumber(),
+      customerName: _customerName,
       totalAmount: _subtotal,
-      discount: _discount + _couponDiscount,
+      discount: _couponDiscount,
       tax: _tax,
       netAmount: _netAmount,
       paymentMethod: _paymentMethod,
@@ -113,29 +170,30 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       totalPrice: i.total,
     )).toList();
 
-    final saleId = await salesService.createSale(sale, items);
+    try {
+      await salesService.createSale(sale, items);
+      
+      // Reload the local medicines cache since stock has changed
+      await inventoryService.loadMedicines();
 
-    for (final item in _items) {
-      await inventoryService.updateStock(
-        item.medicineId,
-        item.quantity,
-        'out',
-        saleId: saleId,
-      );
-    }
-
-    if (mounted) {
-      AppSnackbar.showSuccess(context, 'Sale completed - ${sale.billNumber}');
-      Navigator.pop(context);
+      if (mounted) {
+        AppSnackbar.showSuccess(context, 'Sale completed - ${sale.billNumber}');
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.showError(context, 'Failed to complete sale: $e');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final inventory = context.watch<InventoryService>();
+    final customers = context.watch<CustomerService>().customers;
     final searchResults = _searchCtrl.text.isNotEmpty
         ? inventory.searchMedicines(_searchCtrl.text)
-            .where((m) => m.stockQuantity > 0 && !m.isExpired)
+            .where((m) => !m.isExpired)
             .toList()
         : <MedicineModel>[];
 
@@ -159,6 +217,21 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
+                DropdownButtonFormField<int>(
+                  value: _selectedCustomerId,
+                  decoration: const InputDecoration(
+                    labelText: 'Customer (optional)',
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                  items: customers.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedCustomerId = v;
+                      _customerName = v != null ? customers.firstWhere((c) => c.id == v).name : null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
                 TextField(
                   controller: _searchCtrl,
                   decoration: InputDecoration(
@@ -225,9 +298,19 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                 },
                               ),
                               Text('${item.quantity}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              IconButton(
+                               IconButton(
                                 icon: const Icon(Icons.add_circle_outline, size: 20),
-                                onPressed: () => setState(() => item.quantity++),
+                                onPressed: () {
+                                  final medicine = inventory.medicines.firstWhere((m) => m.id == item.medicineId);
+                                  if (item.quantity >= medicine.stockQuantity) {
+                                    AppSnackbar.showError(
+                                      context,
+                                      'Cannot add more of "${medicine.name}". Available stock is ${medicine.stockQuantity}.',
+                                    );
+                                    return;
+                                  }
+                                  setState(() => item.quantity++);
+                                },
                               ),
                               const SizedBox(width: 8),
                               Text(Helpers.formatCurrency(item.total),
@@ -289,7 +372,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   Chip(
                     label: Text('Coupon: $_couponCode (-${Helpers.formatCurrency(_couponDiscount)})'),
                     deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () => setState(() { _couponCode = ''; _couponDiscount = 0; _couponCtrl.clear(); }),
+                    onDeleted: () => setState(() { _couponCode = ''; _appliedCoupon = null; _couponCtrl.clear(); }),
                   ),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -314,14 +397,23 @@ class _SaleItem {
   final int medicineId;
   final String medicineName;
   final double unitPrice;
-  int quantity;
+  int _quantity;
 
   _SaleItem({
     required this.medicineId,
     required this.medicineName,
     required this.unitPrice,
-    this.quantity = 1,
-  });
+    int quantity = 1,
+  }) : _quantity = quantity < 1 ? 1 : quantity;
 
-  double get total => unitPrice * quantity;
+  int get quantity => _quantity;
+  set quantity(int val) {
+    if (val < 1) {
+      _quantity = 1;
+    } else {
+      _quantity = val;
+    }
+  }
+
+  double get total => unitPrice * _quantity;
 }

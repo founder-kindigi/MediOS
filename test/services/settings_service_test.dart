@@ -2,16 +2,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../test_helper.dart';
-import '../../lib/features/settings/services/settings_service.dart';
+import 'package:medios/features/settings/services/settings_service.dart';
+import 'package:medios/core/security/secure_storage_service.dart';
+import 'package:medios/core/constants/app_constants.dart';
+import 'dart:convert';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late Database db;
   late SettingsService service;
 
   setUp(() async {
-    db = await createAndSetTestDb();
     SharedPreferences.setMockInitialValues({});
-    service = SettingsService();
+    db = await createAndSetTestDb();
+    service = SettingsService(secureStorage: FakeSecureStorageService());
   });
 
   tearDown(() async {
@@ -22,7 +26,7 @@ void main() {
   test('getAppInfo returns correct structure', () async {
     final info = await service.getAppInfo();
     expect(info['appName'], 'MediOS');
-    expect(info['dbVersion'], 8);
+    expect(info['dbVersion'], AppConstants.dbVersion);
     expect(info.containsKey('medicines'), true);
   });
 
@@ -62,4 +66,58 @@ void main() {
     final t2 = await service.getLastSyncTime();
     expect(t2, isNotNull);
   });
+}
+
+class FakeSecureStorageService implements SecureStorageService {
+  final Map<String, String> _storage = {};
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<void> store(String key, String value) async {
+    _storage[key] = value;
+  }
+
+  @override
+  Future<String?> retrieve(String key) async {
+    return _storage[key];
+  }
+
+  @override
+  Future<void> storeMap(String key, Map<String, dynamic> data) async {
+    _storage[key] = jsonEncode(data);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> retrieveMap(String key) async {
+    final val = _storage[key];
+    if (val == null) return null;
+    return jsonDecode(val) as Map<String, dynamic>;
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    _storage.remove(key);
+  }
+
+  @override
+  Future<bool> contains(String key) async {
+    return _storage.containsKey(key);
+  }
+
+  @override
+  Future<void> clearAll() async {
+    _storage.clear();
+  }
+
+  @override
+  Future<void> migrateFromUnencrypted(Map<String, String> unencryptedData) async {
+    _storage.addAll(unencryptedData);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getKeyInfo() async {
+    return {'algorithm': 'AES-256-CBC'};
+  }
 }

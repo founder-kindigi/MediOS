@@ -123,8 +123,17 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
     final emailCtrl = TextEditingController(text: supplier?.email ?? '');
     final addressCtrl = TextEditingController(text: supplier?.address ?? '');
 
+    bool hasChanges() {
+      return nameCtrl.text != (supplier?.name ?? '') ||
+             contactCtrl.text != (supplier?.contactPerson ?? '') ||
+             phoneCtrl.text != (supplier?.phone ?? '') ||
+             emailCtrl.text != (supplier?.email ?? '') ||
+             addressCtrl.text != (supplier?.address ?? '');
+    }
+
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         final formKey = GlobalKey<FormState>();
         return AlertDialog(
@@ -145,37 +154,73 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () async {
+                if (hasChanges()) {
+                  final discard = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Discard Changes'),
+                      content: const Text('You have unsaved changes. Are you sure you want to discard them?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
+                        ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Discard')),
+                      ],
+                    ),
+                  );
+                  if (discard == true && context.mounted) {
+                    Navigator.pop(context);
+                  }
+                } else {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
-                final svc = context.read<SupplierService>();
-                final model = SupplierModel(
-                  id: supplier?.id,
-                  name: nameCtrl.text,
-                  contactPerson: contactCtrl.text,
-                  phone: phoneCtrl.text,
-                  email: emailCtrl.text,
-                  address: addressCtrl.text,
-                );
-                if (supplier == null) {
-                  await svc.addSupplier(model);
-                  if (context.mounted) AppSnackbar.showSuccess(context, 'Supplier added successfully');
-                } else {
-                  await svc.updateSupplier(model);
-                  if (context.mounted) AppSnackbar.showSuccess(context, 'Supplier updated successfully');
+                try {
+                  final svc = context.read<SupplierService>();
+                  final model = SupplierModel(
+                    id: supplier?.id,
+                    name: nameCtrl.text.trim(),
+                    contactPerson: contactCtrl.text.trim(),
+                    phone: phoneCtrl.text.trim(),
+                    email: emailCtrl.text.trim(),
+                    address: addressCtrl.text.trim(),
+                  );
+                  if (supplier == null) {
+                    await svc.addSupplier(model);
+                    if (context.mounted) AppSnackbar.showSuccess(context, 'Supplier added successfully');
+                  } else {
+                    await svc.updateSupplier(model);
+                    if (context.mounted) AppSnackbar.showSuccess(context, 'Supplier updated successfully');
+                  }
+                  if (context.mounted) Navigator.pop(context);
+                } catch (e) {
+                  if (context.mounted) AppSnackbar.showError(context, 'Error saving supplier: $e');
                 }
-                if (context.mounted) Navigator.pop(context);
               },
               child: Text(supplier == null ? 'Add' : 'Update'),
             ),
           ],
         );
       },
-    );
+    ).then((_) {
+      nameCtrl.dispose();
+      contactCtrl.dispose();
+      phoneCtrl.dispose();
+      emailCtrl.dispose();
+      addressCtrl.dispose();
+    });
   }
 
   void _deleteSupplier(SupplierModel supplier) {
+    if (supplier.id == null) {
+      AppSnackbar.showError(context, 'Invalid supplier ID');
+      return;
+    }
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -184,10 +229,19 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
-              context.read<SupplierService>().deleteSupplier(supplier.id!);
-              AppSnackbar.showSuccess(context, 'Supplier deleted');
-              Navigator.pop(context);
+            onPressed: () async {
+              try {
+                await context.read<SupplierService>().deleteSupplier(supplier.id!);
+                if (context.mounted) {
+                  AppSnackbar.showSuccess(context, 'Supplier deleted successfully');
+                  Navigator.pop(context);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AppSnackbar.showError(context, 'Failed to delete supplier: $e');
+                  Navigator.pop(context);
+                }
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Delete'),

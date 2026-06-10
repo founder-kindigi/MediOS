@@ -37,9 +37,8 @@ class NotificationService {
 
     final expiring = await db.query('medicines',
       where: "expiry_date IS NOT NULL AND expiry_date != '' "
-             "AND CAST(expiry_date AS INTEGER) > 0 "
-             "AND CAST(expiry_date AS INTEGER) <= ?",
-      whereArgs: [in30Days.millisecondsSinceEpoch],
+             "AND expiry_date <= ? AND expiry_date > ?",
+      whereArgs: [in30Days.toIso8601String(), now.toIso8601String()],
       orderBy: 'expiry_date ASC',
     );
 

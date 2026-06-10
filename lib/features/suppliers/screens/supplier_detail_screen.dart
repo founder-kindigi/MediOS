@@ -23,12 +23,22 @@ class _SupplierDetailScreenState extends State<SupplierDetailScreen> {
   }
 
   Future<void> _loadOrders() async {
+    if (widget.supplier.id == null) {
+      if (mounted) setState(() => _orders = []);
+      return;
+    }
     final svc = context.read<PurchaseOrderService>();
-    await svc.loadOrders();
-    final supplierOrders = svc.orders
-        .where((o) => o.supplierName == widget.supplier.name)
-        .toList();
-    if (mounted) setState(() => _orders = supplierOrders);
+    try {
+      final supplierOrders = await svc.getOrdersBySupplier(widget.supplier.id!);
+      if (mounted) setState(() => _orders = supplierOrders);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _orders = []);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading orders: $e')),
+        );
+      }
+    }
   }
 
   @override

@@ -45,6 +45,14 @@ class _NewPrescriptionScreenState extends State<NewPrescriptionScreen> {
   List<_PrescItem> _items = [];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<InventoryService>().loadMedicines();
+    });
+  }
+
+  @override
   void dispose() {
     _patientCtrl.dispose();
     _phoneCtrl.dispose();
@@ -68,30 +76,34 @@ class _NewPrescriptionScreenState extends State<NewPrescriptionScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one medicine')),
-      );
+      AppSnackbar.showError(context, 'Add at least one medicine');
       return;
     }
-    final service = context.read<PrescriptionService>();
-    await service.createPrescription(PrescriptionModel(
-      patientName: _patientCtrl.text.trim(),
-      patientPhone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
-      doctorName: _doctorCtrl.text.trim().isEmpty ? null : _doctorCtrl.text.trim(),
-      prescriptionDate: DateTime.now(),
-      notes: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
-      items: _items.map((i) => PrescriptionItem(
-        medicineId: i.medicineId,
-        medicineName: i.medicineName,
-        dosage: i.dosage.isEmpty ? null : i.dosage,
-        frequency: i.frequency.isEmpty ? null : i.frequency,
-        duration: i.duration.isEmpty ? null : i.duration,
-        quantity: i.quantity,
-      )).toList(),
-    ));
-    if (mounted) {
-      AppSnackbar.showSuccess(context, 'Prescription created');
-      Navigator.pop(context);
+    try {
+      final service = context.read<PrescriptionService>();
+      await service.createPrescription(PrescriptionModel(
+        patientName: _patientCtrl.text.trim(),
+        patientPhone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+        doctorName: _doctorCtrl.text.trim().isEmpty ? null : _doctorCtrl.text.trim(),
+        prescriptionDate: DateTime.now(),
+        notes: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+        items: _items.map((i) => PrescriptionItem(
+          medicineId: i.medicineId,
+          medicineName: i.medicineName,
+          dosage: i.dosage.isEmpty ? null : i.dosage,
+          frequency: i.frequency.isEmpty ? null : i.frequency,
+          duration: i.duration.isEmpty ? null : i.duration,
+          quantity: i.quantity,
+        )).toList(),
+      ));
+      if (mounted) {
+        AppSnackbar.showSuccess(context, 'Prescription created');
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.showError(context, 'Failed to create prescription: $e');
+      }
     }
   }
 
@@ -148,15 +160,25 @@ class _NewPrescriptionScreenState extends State<NewPrescriptionScreen> {
               onChanged: (_) => setState(() {}),
             ),
             if (searchResults.isNotEmpty)
-              Card(
-                margin: const EdgeInsets.only(top: 4),
-                child: Column(
+              Container(
+                constraints: const BoxConstraints(maxHeight: 160),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListView(
+                  shrinkWrap: true,
                   children: searchResults.map((m) => ListTile(
                     dense: true,
                     title: Text(m.name),
                     subtitle: Text('₨${m.sellingPrice.toStringAsFixed(0)} | Stock: ${m.stockQuantity}'),
                     trailing: const Icon(Icons.add_circle, color: AppColors.primary),
-                    onTap: () => _addMedicine(m),
+                    onTap: () {
+                      _addMedicine(m);
+                      _searchCtrl.clear();
+                      setState(() {});
+                    },
                   )).toList(),
                 ),
               ),

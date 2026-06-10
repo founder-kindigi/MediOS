@@ -38,4 +38,26 @@ class Validators {
     }
     return null;
   }
+
+  static String? positiveInteger(String? value, [String field = 'Value']) {
+    if (value == null || value.trim().isEmpty) {
+      return '$field is required';
+    }
+    final number = int.tryParse(value);
+    if (number == null || number < 0) {
+      return 'Enter a valid positive whole number';
+    }
+    return null;
+  }
+
+  static String? optionalInteger(String? value, [String field = 'Value']) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    final number = int.tryParse(value);
+    if (number == null || number < 0) {
+      return 'Enter a valid positive whole number';
+    }
+    return null;
+  }
 }

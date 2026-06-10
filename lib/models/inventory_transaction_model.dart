@@ -7,6 +7,7 @@ class InventoryTransactionModel {
   final String? referenceType;
   final int? referenceId;
   final String? notes;
+  final int? storeId;
   final DateTime createdAt;
 
   InventoryTransactionModel({
@@ -18,6 +19,7 @@ class InventoryTransactionModel {
     this.referenceType,
     this.referenceId,
     this.notes,
+    this.storeId = 1,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -31,6 +33,7 @@ class InventoryTransactionModel {
       'reference_type': referenceType,
       'reference_id': referenceId,
       'notes': notes,
+      'store_id': storeId,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -45,6 +48,7 @@ class InventoryTransactionModel {
       referenceType: map['reference_type'] as String?,
       referenceId: map['reference_id'] as int?,
       notes: map['notes'] as String?,
+      storeId: map['store_id'] as int? ?? 1,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }

@@ -8,19 +8,57 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get_it/get_it.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/security/secure_storage_service.dart';
+import '../../../core/errors/app_error.dart';
+import '../../stores/services/store_service.dart';
 
 class SettingsService extends ChangeNotifier {
   final DatabaseHelper _db;
-
-  SettingsService({DatabaseHelper? databaseHelper})
-      : _db = databaseHelper ?? GetIt.instance<DatabaseHelper>();
+  final SecureStorageService _secureStorage;
   bool _isProcessing = false;
+  double _defaultTaxRate = 0.0;
+  String? _lastSyncTime;
+
+  SettingsService({
+    DatabaseHelper? databaseHelper,
+    SecureStorageService? secureStorage,
+  })  : _db = databaseHelper ?? GetIt.instance<DatabaseHelper>(),
+        _secureStorage = secureStorage ?? GetIt.instance<SecureStorageService>() {
+    final hasPrefs = GetIt.instance.isRegistered<SharedPreferences>();
+    if (hasPrefs) {
+      try {
+        final prefs = GetIt.instance<SharedPreferences>();
+        _defaultTaxRate = prefs.getDouble('default_tax_rate') ?? 0.0;
+        _lastSyncTime = prefs.getString('last_sync_time');
+        return;
+      } catch (_) {}
+    }
+    loadSettings();
+  }
 
   bool get isProcessing => _isProcessing;
+  double get defaultTaxRate => _defaultTaxRate;
+  String? get lastSyncTime => _lastSyncTime;
+
+  Future<void> loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _defaultTaxRate = prefs.getDouble('default_tax_rate') ?? 0.0;
+    _lastSyncTime = prefs.getString('last_sync_time');
+    notifyListeners();
+  }
+
+  Future<double> getDefaultTaxRate() async {
+    return _defaultTaxRate;
+  }
+
+  Future<String?> getLastSyncTime() async {
+    return _lastSyncTime;
+  }
 
   Future<Map<String, dynamic>> getAppInfo() async {
-    final medCount = await _db.getCount('medicines');
-    final saleCount = await _db.getCount('sales');
+    final storeId = GetIt.instance<StoreService>().selectedStoreId;
+    final medCount = await _db.getCount('medicines', where: 'store_id = ?', whereArgs: [storeId]);
+    final saleCount = await _db.getCount('sales', where: 'store_id = ?', whereArgs: [storeId]);
     final supCount = await _db.getCount('suppliers');
     final custCount = await _db.getCount('customers');
     final userCount = await _db.getCount('users');
@@ -37,17 +75,18 @@ class SettingsService extends ChangeNotifier {
     };
   }
 
-  Future<String?> getLastSyncTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('last_sync_time');
-  }
-
   Future<void> setLastSyncTime() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('last_sync_time', DateTime.now().toIso8601String());
+    final timeStr = DateTime.now().toIso8601String();
+    await prefs.setString('last_sync_time', timeStr);
+    _lastSyncTime = timeStr;
+    notifyListeners();
   }
 
   Future<void> importDatabase() async {
+    if (kIsWeb) {
+      throw const AppError(message: 'Database import is not supported on Web', type: ErrorType.validation);
+    }
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
@@ -60,10 +99,14 @@ class SettingsService extends ChangeNotifier {
       _isProcessing = true;
       notifyListeners();
 
+      await _db.closeDatabase();
+
       final dir = await getApplicationDocumentsDirectory();
       final targetPath = '${dir.path}/medios.db';
       final sourceFile = File(file.path!);
       await sourceFile.copy(targetPath);
+
+      await _db.database;
 
       await setLastSyncTime();
 
@@ -77,6 +120,9 @@ class SettingsService extends ChangeNotifier {
   }
 
   Future<void> exportDatabase() async {
+    if (kIsWeb) {
+      throw const AppError(message: 'Database export is not supported on Web', type: ErrorType.validation);
+    }
     _isProcessing = true;
     notifyListeners();
 
@@ -110,15 +156,17 @@ class SettingsService extends ChangeNotifier {
 
     try {
       final db = await _db.database;
+      final storeId = GetIt.instance<StoreService>().selectedStoreId;
       final rows = await db.rawQuery('''
         SELECT m.id, m.name, m.generic_name, c.name as category, m.manufacturer,
                m.unit, m.purchase_price, m.selling_price, m.stock_quantity,
                m.reorder_level, m.expiry_date, m.barcode
         FROM medicines m LEFT JOIN categories c ON m.category_id = c.id
+        WHERE m.store_id = ?
         ORDER BY m.name ASC
-      ''');
+      ''', [storeId]);
 
-      final header = 'ID,Name,Generic Name,Category,Manufacturer,Unit,Purchase Price,Selling Price,Stock,Reorder Level,Expiry Date,Barcode';
+      const header = 'ID,Name,Generic Name,Category,Manufacturer,Unit,Purchase Price,Selling Price,Stock,Reorder Level,Expiry Date,Barcode';
       final csvRows = [header];
       for (final row in rows) {
         csvRows.add([
@@ -132,12 +180,16 @@ class SettingsService extends ChangeNotifier {
         ].join(','));
       }
 
-      final tempDir = await getTemporaryDirectory();
-      final csvFile = File('${tempDir.path}/medicines_export_${DateTime.now().millisecondsSinceEpoch}.csv');
-      await csvFile.writeAsString(csvRows.join('\n'), encoding: utf8);
-
+      final csvString = '\uFEFF${csvRows.join('\n')}';
+      final csvData = utf8.encode(csvString);
       await Share.shareXFiles(
-        [XFile(csvFile.path)],
+        [
+          XFile.fromData(
+            Uint8List.fromList(csvData),
+            name: 'medicines_export_${DateTime.now().millisecondsSinceEpoch}.csv',
+            mimeType: 'text/csv',
+          )
+        ],
         text: 'MediOS Medicines Export',
       );
     } catch (e) {
@@ -155,6 +207,10 @@ class SettingsService extends ChangeNotifier {
     try {
       final db = await _db.database;
       await db.transaction((txn) async {
+        await txn.delete('prescription_items');
+        await txn.delete('prescriptions');
+        await txn.delete('customer_order_items');
+        await txn.delete('customer_orders');
         await txn.delete('return_items');
         await txn.delete('returns');
         await txn.delete('inventory_transactions');
@@ -165,7 +221,6 @@ class SettingsService extends ChangeNotifier {
         await txn.delete('customers');
         await txn.delete('suppliers');
         await txn.delete('medicines');
-        await txn.delete('categories');
       });
     } finally {
       _isProcessing = false;
@@ -173,37 +228,52 @@ class SettingsService extends ChangeNotifier {
     }
   }
 
-  Future<double> getDefaultTaxRate() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getDouble('default_tax_rate') ?? 0;
-  }
-
   Future<void> setDefaultTaxRate(double rate) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('default_tax_rate', rate);
+    _defaultTaxRate = rate;
     notifyListeners();
   }
 
   Future<List<Map<String, dynamic>>> getCoupons() async {
-    final prefs = await SharedPreferences.getInstance();
-    final json = prefs.getString('coupons');
-    if (json == null) return [];
-    return (jsonDecode(json) as List).cast<Map<String, dynamic>>();
+    final storeId = GetIt.instance<StoreService>().selectedStoreId;
+    final key = 'coupons_store_$storeId';
+    try {
+      final decrypted = await _secureStorage.retrieve(key);
+      if (decrypted == null) {
+        final prefs = await SharedPreferences.getInstance();
+        final legacyJson = prefs.getString('coupons');
+        if (legacyJson != null) {
+          final List legacyCoupons = jsonDecode(legacyJson);
+          final scoped = legacyCoupons.cast<Map<String, dynamic>>();
+          await _secureStorage.store(key, jsonEncode(scoped));
+          await prefs.remove('coupons');
+          return scoped;
+        }
+        return [];
+      }
+      return (jsonDecode(decrypted) as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('Error loading secure coupons: $e');
+      return [];
+    }
   }
 
   Future<void> addCoupon(Map<String, dynamic> coupon) async {
     final coupons = await getCoupons();
     coupons.add(coupon);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('coupons', jsonEncode(coupons));
+    final storeId = GetIt.instance<StoreService>().selectedStoreId;
+    final key = 'coupons_store_$storeId';
+    await _secureStorage.store(key, jsonEncode(coupons));
     notifyListeners();
   }
 
   Future<void> removeCoupon(String code) async {
     final coupons = await getCoupons();
     coupons.removeWhere((c) => c['code'] == code);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('coupons', jsonEncode(coupons));
+    final storeId = GetIt.instance<StoreService>().selectedStoreId;
+    final key = 'coupons_store_$storeId';
+    await _secureStorage.store(key, jsonEncode(coupons));
     notifyListeners();
   }
 
@@ -224,5 +294,12 @@ class SettingsService extends ChangeNotifier {
       return '"${value.replaceAll('"', '""')}"';
     }
     return value;
+  }
+
+  @override
+  void dispose() {
+    // Clear data to prevent memory leaks
+    _lastSyncTime = null;
+    super.dispose();
   }
 }

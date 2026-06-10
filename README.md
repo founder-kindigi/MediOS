@@ -72,10 +72,30 @@ flutter build web --release
 flutter build windows --release
 ```
 
-## Default Login
+## First-Time Setup
 
-- **Username:** `admin`
-- **Password:** `admin123`
+MediOS now uses a secure first-time setup process. When you run the app for the first time:
+
+1. **No default credentials** - For security reasons, no default admin user is created
+2. **First user registration** - You'll be guided through creating your first administrator account
+3. **Strong password policy** - Passwords must meet NIST 800-63B security requirements:
+   - Minimum 12 characters
+   - At least one uppercase letter
+   - At least one lowercase letter  
+   - At least one number
+   - At least one special character
+   - Not a common or easily guessable password
+
+### For Development & Testing
+
+Test users are created automatically in the test environment:
+- **Username:** `test_admin`
+- **Password:** `TestAdmin@Secure123`
+- **Role:** Administrator
+
+- **Username:** `test_pharmacist`  
+- **Password:** `Pharmacist@Secure456`
+- **Role:** Pharmacist
 
 ## Database
 

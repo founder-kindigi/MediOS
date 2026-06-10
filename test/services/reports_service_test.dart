@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../test_helper.dart';
-import '../../lib/features/reports/services/reports_service.dart';
+import 'package:medios/features/reports/services/reports_service.dart';
 
 void main() {
   late Database db;

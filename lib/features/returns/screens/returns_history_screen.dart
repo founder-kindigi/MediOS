@@ -62,7 +62,7 @@ class _ReturnsHistoryScreenState extends State<ReturnsHistoryScreen> {
                                   style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)),
                             ],
                           ),
-                          onTap: () => _showReturnDetail(ret.id!),
+                          onTap: ret.id == null ? null : () => _showReturnDetail(ret.id!),
                         ),
                       );
                     },

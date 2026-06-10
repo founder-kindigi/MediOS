@@ -11,6 +11,7 @@ import '../../../core/widgets/responsive_wrapper.dart';
 import '../../../core/utils/validators.dart';
 import '../../../models/customer_model.dart';
 import '../../../routes/app_router.dart';
+import 'customer_credit_screen.dart';
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
@@ -44,7 +45,23 @@ class _CustomersScreenState extends State<CustomersScreen> {
         : customerService.customers;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Customers')),
+      appBar: AppBar(
+        title: const Text('Customers'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.credit_card),
+            tooltip: 'Credit Management',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CustomerCreditScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
 
 
       floatingActionButton: FloatingActionButton(
@@ -122,8 +139,16 @@ class _CustomersScreenState extends State<CustomersScreen> {
     final emailCtrl = TextEditingController(text: customer?.email ?? '');
     final addressCtrl = TextEditingController(text: customer?.address ?? '');
 
+    bool hasChanges() {
+      return nameCtrl.text != (customer?.name ?? '') ||
+             phoneCtrl.text != (customer?.phone ?? '') ||
+             emailCtrl.text != (customer?.email ?? '') ||
+             addressCtrl.text != (customer?.address ?? '');
+    }
+
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         final formKey = GlobalKey<FormState>();
         return AlertDialog(
@@ -143,36 +168,71 @@ class _CustomersScreenState extends State<CustomersScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () async {
+                if (hasChanges()) {
+                  final discard = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Discard Changes'),
+                      content: const Text('You have unsaved changes. Are you sure you want to discard them?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
+                        ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Discard')),
+                      ],
+                    ),
+                  );
+                  if (discard == true && context.mounted) {
+                    Navigator.pop(context);
+                  }
+                } else {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
-                final svc = context.read<CustomerService>();
-                final model = CustomerModel(
-                  id: customer?.id,
-                  name: nameCtrl.text,
-                  phone: phoneCtrl.text,
-                  email: emailCtrl.text,
-                  address: addressCtrl.text,
-                );
-                if (customer == null) {
-                  await svc.addCustomer(model);
-                  if (context.mounted) AppSnackbar.showSuccess(context, 'Customer added successfully');
-                } else {
-                  await svc.updateCustomer(model);
-                  if (context.mounted) AppSnackbar.showSuccess(context, 'Customer updated successfully');
+                try {
+                  final svc = context.read<CustomerService>();
+                  final model = CustomerModel(
+                    id: customer?.id,
+                    name: nameCtrl.text.trim(),
+                    phone: phoneCtrl.text.trim(),
+                    email: emailCtrl.text.trim(),
+                    address: addressCtrl.text.trim(),
+                  );
+                  if (customer == null) {
+                    await svc.addCustomer(model);
+                    if (context.mounted) AppSnackbar.showSuccess(context, 'Customer added successfully');
+                  } else {
+                    await svc.updateCustomer(model);
+                    if (context.mounted) AppSnackbar.showSuccess(context, 'Customer updated successfully');
+                  }
+                  if (context.mounted) Navigator.pop(context);
+                } catch (e) {
+                  if (context.mounted) AppSnackbar.showError(context, 'Error saving customer: $e');
                 }
-                if (context.mounted) Navigator.pop(context);
               },
               child: Text(customer == null ? 'Add' : 'Update'),
             ),
           ],
         );
       },
-    );
+    ).then((_) {
+      nameCtrl.dispose();
+      phoneCtrl.dispose();
+      emailCtrl.dispose();
+      addressCtrl.dispose();
+    });
   }
 
   void _deleteCustomer(CustomerModel customer) {
+    if (customer.id == null) {
+      AppSnackbar.showError(context, 'Invalid customer ID');
+      return;
+    }
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -181,10 +241,19 @@ class _CustomersScreenState extends State<CustomersScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
-              context.read<CustomerService>().deleteCustomer(customer.id!);
-              AppSnackbar.showSuccess(context, 'Customer deleted');
-              Navigator.pop(context);
+            onPressed: () async {
+              try {
+                await context.read<CustomerService>().deleteCustomer(customer.id!);
+                if (context.mounted) {
+                  AppSnackbar.showSuccess(context, 'Customer deleted successfully');
+                  Navigator.pop(context);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AppSnackbar.showError(context, 'Failed to delete customer: $e');
+                  Navigator.pop(context);
+                }
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Delete'),

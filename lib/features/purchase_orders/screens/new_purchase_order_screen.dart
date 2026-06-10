@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/purchase_order_service.dart';
 import '../../inventory/services/inventory_service.dart';
+import '../../suppliers/services/supplier_service.dart';
 import '../../../models/purchase_order_model.dart';
 import '../../../models/medicine_model.dart';
 import '../../../core/constants/app_colors.dart';
@@ -23,6 +24,15 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
   String? _selectedSupplierName;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SupplierService>().loadSuppliers();
+      context.read<InventoryService>().loadMedicines();
+    });
+  }
+
+  @override
   void dispose() {
     _searchCtrl.dispose();
     _noteCtrl.dispose();
@@ -37,11 +47,16 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
       if (existing != null) {
         existing.quantity++;
       } else {
+        final bool isZeroPrice = medicine.purchasePrice <= 0;
+        final double fallbackPrice = isZeroPrice
+            ? (medicine.sellingPrice > 0 ? medicine.sellingPrice * 0.7 : 10.0)
+            : medicine.purchasePrice;
         _items.add(PurchaseItem(
           medicineId: medicine.id!,
           medicineName: medicine.name,
-          unitPrice: medicine.purchasePrice,
+          unitPrice: fallbackPrice,
           quantity: 1,
+          isZeroPriceWarning: isZeroPrice,
         ));
       }
     });
@@ -49,14 +64,11 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
 
   Future<void> _placeOrder() async {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one item')),
-      );
+      AppSnackbar.showError(context, 'Add at least one item');
       return;
     }
 
     final poService = context.read<PurchaseOrderService>();
-    final inventory = context.read<InventoryService>();
 
     final order = PurchaseOrderModel(
       supplierId: _selectedSupplierId,
@@ -74,26 +86,23 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
       totalPrice: i.total,
     )).toList();
 
-    final orderId = await poService.createOrder(order, items);
-
-    for (final item in _items) {
-      await inventory.updateStock(
-        item.medicineId,
-        item.quantity,
-        'in',
-        poId: orderId,
-      );
-    }
-
-    if (mounted) {
-      AppSnackbar.showSuccess(context, 'Order placed - ${order.orderNumber}');
-      Navigator.pop(context);
+    try {
+      await poService.createOrder(order, items);
+      if (mounted) {
+        AppSnackbar.showSuccess(context, 'Order placed - ${order.orderNumber}');
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.showError(context, 'Failed to place order: $e');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final inventory = context.watch<InventoryService>();
+    final suppliers = context.watch<SupplierService>().suppliers;
     final searchResults = _searchCtrl.text.isNotEmpty
         ? inventory.searchMedicines(_searchCtrl.text)
         : <MedicineModel>[];
@@ -106,6 +115,21 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
+                DropdownButtonFormField<int>(
+                  value: _selectedSupplierId,
+                  decoration: const InputDecoration(
+                    labelText: 'Supplier (optional)',
+                    prefixIcon: Icon(Icons.business),
+                  ),
+                  items: suppliers.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedSupplierId = v;
+                      _selectedSupplierName = suppliers.firstWhere((s) => s.id == v).name;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: _searchCtrl,
                   decoration: InputDecoration(
@@ -153,8 +177,32 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
                       final item = _items[index];
                       return Card(
                         child: ListTile(
-                          title: Text(item.medicineName),
-                          subtitle: Text('${Helpers.formatCurrency(item.unitPrice)} each'),
+                          title: Row(
+                            children: [
+                              Expanded(child: Text(item.medicineName)),
+                              if (item.isZeroPriceWarning)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.warning.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: AppColors.warning, width: 0.5),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.warning_amber_rounded, size: 10, color: AppColors.warning),
+                                      SizedBox(width: 2),
+                                      Text(
+                                        'Estimated Price',
+                                        style: TextStyle(fontSize: 8, color: AppColors.warning, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                          subtitle: Text('${Helpers.formatCurrency(item.unitPrice)} each${item.isZeroPriceWarning ? " (70% of retail)" : ""}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -225,12 +273,14 @@ class PurchaseItem {
   final String medicineName;
   final double unitPrice;
   int quantity;
+  final bool isZeroPriceWarning;
 
   PurchaseItem({
     required this.medicineId,
     required this.medicineName,
     required this.unitPrice,
     this.quantity = 1,
+    this.isZeroPriceWarning = false,
   });
 
   double get total => unitPrice * quantity;

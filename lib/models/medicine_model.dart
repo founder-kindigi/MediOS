@@ -1,3 +1,5 @@
+import '../core/constants/app_constants.dart';
+
 class MedicineModel {
   final int? id;
   final String name;
@@ -14,8 +16,14 @@ class MedicineModel {
   final DateTime? expiryDate;
   final String? barcode;
   final String? description;
+  final int? storeId;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  // Cached computed properties for performance
+  late final bool _isLowStock;
+  late final bool _isExpired;
+  late final bool _isNearExpiry;
 
   MedicineModel({
     this.id,
@@ -33,10 +41,23 @@ class MedicineModel {
     this.expiryDate,
     this.barcode,
     this.description,
+    this.storeId = 1,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+        updatedAt = updatedAt ?? DateTime.now() {
+    // Compute expensive properties once in constructor
+    _isLowStock = stockQuantity <= reorderLevel;
+    
+    final now = DateTime.now(); // Compute once for all date comparisons
+    _isExpired = expiryDate != null && expiryDate!.isBefore(now);
+    
+    if (expiryDate != null && !_isExpired) {
+      _isNearExpiry = expiryDate!.difference(now).inDays <= AppConstants.nearExpiryDays;
+    } else {
+      _isNearExpiry = false;
+    }
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -54,6 +75,7 @@ class MedicineModel {
       'expiry_date': expiryDate?.toIso8601String(),
       'barcode': barcode,
       'description': description,
+      'store_id': storeId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -78,19 +100,17 @@ class MedicineModel {
           : null,
       barcode: map['barcode'] as String?,
       description: map['description'] as String?,
+      storeId: map['store_id'] as int? ?? 1,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
   }
 
-  bool get isLowStock => stockQuantity <= reorderLevel;
-  bool get isExpired => expiryDate != null && expiryDate!.isBefore(DateTime.now());
-  bool get isNearExpiry =>
-      expiryDate != null &&
-      expiryDate!.difference(DateTime.now()).inDays <= 30 &&
-      !isExpired;
+  bool get isLowStock => _isLowStock;
+  bool get isExpired => _isExpired;
+  bool get isNearExpiry => _isNearExpiry;
 
-  MedicineModel copyWith({int? stockQuantity, double? sellingPrice, double? wholesalePrice, int? reorderLevel, String? barcode}) {
+  MedicineModel copyWith({int? stockQuantity, double? sellingPrice, double? wholesalePrice, int? reorderLevel, String? barcode, int? storeId}) {
     return MedicineModel(
       id: id,
       name: name,
@@ -107,6 +127,7 @@ class MedicineModel {
       expiryDate: expiryDate,
       barcode: barcode ?? this.barcode,
       description: description,
+      storeId: storeId ?? this.storeId,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
     );

@@ -2,6 +2,7 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite_common/sqflite.dart' show Database, OpenDatabaseOptions;
 import 'package:sqflite_common/utils/utils.dart' show firstIntValue;
 import 'package:bcrypt/bcrypt.dart';
+import 'package:flutter/foundation.dart' show compute;
 import '../../constants/app_constants.dart' show AppConstants;
 import '../../errors/app_error.dart';
 
@@ -16,6 +17,17 @@ class DatabaseHelper {
   static void setTestDatabase(Database? db) {
     _database = db;
   }
+
+  Future<void> closeDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+  }
+
+  Future<String> get databasePath async => AppConstants.dbName;
+  Future<int> getVersion() async => AppConstants.dbVersion;
+  Future<Database> openDatabaseAtPath(String filePath) => throw UnsupportedError('openDatabaseAtPath not supported on this platform');
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -76,10 +88,16 @@ class DatabaseHelper {
         final id = row['id'] as int;
         final pw = row['password_hash'] as String;
         if (!pw.startsWith(r'$2')) {
-          final hash = BCrypt.hashpw(pw, BCrypt.gensalt());
+          final hash = await compute(_computeBcryptHash, pw);
           await db.update('users', {'password_hash': hash}, where: 'id = ?', whereArgs: [id]);
         }
       }
+    }
+    if (oldVersion < 9) {
+      await _createPerformanceIndexes(db);
+    }
+    if (oldVersion < 10) {
+      await db.execute("ALTER TABLE prescriptions ADD COLUMN store_id INTEGER DEFAULT 1 REFERENCES stores(id)");
     }
   }
 
@@ -97,14 +115,171 @@ class DatabaseHelper {
     await db.execute('''CREATE TABLE inventory_transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, medicine_id INTEGER NOT NULL, medicine_name TEXT, type TEXT NOT NULL, quantity INTEGER NOT NULL, reference_type TEXT, reference_id INTEGER, store_id INTEGER DEFAULT 1, notes TEXT, created_at TEXT NOT NULL, FOREIGN KEY (medicine_id) REFERENCES medicines(id))''');
     await db.execute('''CREATE TABLE returns (id INTEGER PRIMARY KEY AUTOINCREMENT, sale_id INTEGER, bill_number TEXT, return_number TEXT NOT NULL UNIQUE, return_date TEXT NOT NULL, total_refund REAL NOT NULL DEFAULT 0, reason TEXT NOT NULL DEFAULT 'damaged', notes TEXT, created_at TEXT NOT NULL, FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE SET NULL)''');
     await db.execute('''CREATE TABLE return_items (id INTEGER PRIMARY KEY AUTOINCREMENT, return_id INTEGER NOT NULL, medicine_id INTEGER NOT NULL, medicine_name TEXT, quantity INTEGER NOT NULL, unit_price REAL NOT NULL, total_refund REAL NOT NULL, FOREIGN KEY (return_id) REFERENCES returns(id) ON DELETE CASCADE, FOREIGN KEY (medicine_id) REFERENCES medicines(id))''');
+    await db.execute('''CREATE TABLE prescriptions (id INTEGER PRIMARY KEY AUTOINCREMENT, patient_name TEXT NOT NULL, patient_phone TEXT, doctor_name TEXT, prescription_date TEXT NOT NULL, notes TEXT, status TEXT NOT NULL DEFAULT 'active', store_id INTEGER DEFAULT 1 REFERENCES stores(id), created_at TEXT NOT NULL)''');
+    await db.execute('''CREATE TABLE prescription_items (id INTEGER PRIMARY KEY AUTOINCREMENT, prescription_id INTEGER NOT NULL, medicine_id INTEGER NOT NULL, medicine_name TEXT, dosage TEXT, frequency TEXT, duration TEXT, quantity INTEGER NOT NULL, FOREIGN KEY (prescription_id) REFERENCES prescriptions(id) ON DELETE CASCADE, FOREIGN KEY (medicine_id) REFERENCES medicines(id))''');
+    await db.execute('''CREATE TABLE customer_orders (id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER, customer_name TEXT, order_number TEXT NOT NULL UNIQUE, order_date TEXT NOT NULL, total_amount REAL NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'pending', notes TEXT, store_id INTEGER DEFAULT 1, created_at TEXT NOT NULL, FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL)''');
+    await db.execute('''CREATE TABLE customer_order_items (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL, medicine_id INTEGER NOT NULL, medicine_name TEXT, quantity INTEGER NOT NULL, unit_price REAL NOT NULL, total_price REAL NOT NULL, FOREIGN KEY (order_id) REFERENCES customer_orders(id) ON DELETE CASCADE, FOREIGN KEY (medicine_id) REFERENCES medicines(id))''');
+    
+    // Create performance indexes
+    await _createPerformanceIndexes(db);
+  }
+  
+  Future<void> _createPerformanceIndexes(Database db) async {
+    // Medicines table indexes (most queried table)
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_medicines_store_id 
+      ON medicines(store_id)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_medicines_category_id 
+      ON medicines(category_id)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_medicines_expiry_date 
+      ON medicines(expiry_date)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_medicines_barcode 
+      ON medicines(barcode)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_medicines_name 
+      ON medicines(name)
+    ''');
+    
+    // Composite indexes for common query patterns
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_medicines_store_expiry 
+      ON medicines(store_id, expiry_date)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_medicines_store_category 
+      ON medicines(store_id, category_id)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_medicines_store_stock 
+      ON medicines(store_id, stock_quantity)
+    ''');
+    
+    // Sales table indexes
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_sales_store_id 
+      ON sales(store_id)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_sales_created_at 
+      ON sales(created_at)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_sales_customer_id 
+      ON sales(customer_id)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_sales_store_date 
+      ON sales(store_id, created_at)
+    ''');
+    
+    // Inventory transactions
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_inv_trans_medicine_id 
+      ON inventory_transactions(medicine_id)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_inv_trans_created_at 
+      ON inventory_transactions(created_at)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_inv_trans_store_id 
+      ON inventory_transactions(store_id)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_inv_trans_store_medicine 
+      ON inventory_transactions(store_id, medicine_id)
+    ''');
+    
+    // Sale items
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_sale_items_sale_id 
+      ON sale_items(sale_id)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_sale_items_medicine_id 
+      ON sale_items(medicine_id)
+    ''');
+    
+    // Purchase orders
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_purchase_orders_store_id 
+      ON purchase_orders(store_id)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_purchase_orders_status 
+      ON purchase_orders(status)
+    ''');
+    
+    // Users table
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_users_username 
+      ON users(username)
+    ''');
+    
+    // Customers table
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_customers_phone 
+      ON customers(phone)
+    ''');
+    
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_customers_name 
+      ON customers(name)
+    ''');
+    
+    // Suppliers table
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_suppliers_name 
+      ON suppliers(name)
+    ''');
   }
 
   Future<void> _seedDefaultData(Database db) async {
     final now = DateTime.now().toIso8601String();
-    await db.insert('stores', {'name': 'Main Store', 'address': '', 'phone': '', 'is_active': 1});
-    await db.execute("INSERT INTO categories (name, description, created_at) VALUES ('Tablet', 'Solid dosage forms', ?), ('Capsule', 'Gelatin encapsulated medicines', ?), ('Syrup', 'Liquid oral medicines', ?), ('Injection', 'Injectable medicines', ?), ('Ointment', 'Topical applications', ?), ('Drop', 'Eye/ear/nasal drops', ?)", [now, now, now, now, now, now]);
-    final adminHash = BCrypt.hashpw('admin123', BCrypt.gensalt());
-    await db.insert('users', {'username': 'admin', 'password_hash': adminHash, 'full_name': 'Administrator', 'role': 'admin', 'created_at': now});
+    
+    // Create default store
+    await db.insert('stores', {
+      'name': 'Main Pharmacy', 
+      'address': 'Update your pharmacy address', 
+      'phone': '', 
+      'is_active': 1
+    });
+    
+    // Create default categories (no users - first-time setup required)
+    await db.execute("""
+      INSERT INTO categories (name, description, created_at) 
+      VALUES 
+        ('Tablet', 'Solid dosage forms', ?),
+        ('Capsule', 'Gelatin encapsulated medicines', ?),
+        ('Syrup', 'Liquid oral medicines', ?),
+        ('Injection', 'Injectable medicines', ?),
+        ('Ointment', 'Topical applications', ?),
+        ('Drop', 'Eye/ear/nasal drops', ?)
+    """, [now, now, now, now, now, now]);
+    
+    // Note: No default admin user is created
+    // First user must be created through first-time setup wizard
   }
 
   Future<int> insert(String table, Map<String, dynamic> values) async {
@@ -153,8 +328,16 @@ class DatabaseHelper {
     }
   }
 
+  void _validateIdentifier(String name) {
+    final regex = RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$');
+    if (!regex.hasMatch(name)) {
+      throw ArgumentError('Invalid database identifier: $name');
+    }
+  }
+
   Future<int> getCount(String table, {String? where, List<dynamic>? whereArgs}) async {
     try {
+      _validateIdentifier(table);
       final db = await database;
       final result = await db.rawQuery('SELECT COUNT(*) as count FROM $table${where != null ? ' WHERE $where' : ''}', whereArgs);
       return firstIntValue(result) ?? 0;
@@ -165,6 +348,8 @@ class DatabaseHelper {
 
   Future<double> getSum(String table, String column, {String? where, List<dynamic>? whereArgs}) async {
     try {
+      _validateIdentifier(table);
+      _validateIdentifier(column);
       final db = await database;
       final result = await db.rawQuery('SELECT COALESCE(SUM($column), 0) as total FROM $table${where != null ? ' WHERE $where' : ''}', whereArgs);
       return (result.first['total'] as num?)?.toDouble() ?? 0;
@@ -173,3 +358,8 @@ class DatabaseHelper {
     }
   }
 }
+
+String _computeBcryptHash(String password) {
+  return BCrypt.hashpw(password, BCrypt.gensalt());
+}
+

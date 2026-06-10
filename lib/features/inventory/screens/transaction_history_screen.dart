@@ -4,6 +4,7 @@ import '../services/inventory_service.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
+import '../../../models/inventory_transaction_model.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({super.key});
@@ -13,7 +14,7 @@ class TransactionHistoryScreen extends StatefulWidget {
 }
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
-  List<dynamic>? _transactions;
+  List<InventoryTransactionModel>? _transactions;
   String _filter = 'all';
 
   @override
@@ -60,6 +61,30 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                             itemBuilder: (context, index) {
                               final t = _transactions![index];
                               final isIn = t.type == 'in';
+                              
+                              String actionLabel;
+                              if (isIn) {
+                                if (t.referenceType == 'initial') {
+                                  actionLabel = 'Initial stock';
+                                } else if (t.referenceType == 'purchase_order') {
+                                  actionLabel = 'Purchased';
+                                } else if (t.referenceType == 'adjustment') {
+                                  actionLabel = 'Adjustment in';
+                                } else {
+                                  actionLabel = 'Received';
+                                }
+                              } else {
+                                if (t.referenceType == 'sale') {
+                                  actionLabel = 'Sold';
+                                } else if (t.referenceType == 'adjustment') {
+                                  actionLabel = 'Adjustment out';
+                                } else if (t.referenceType == 'return') {
+                                  actionLabel = 'Returned';
+                                } else {
+                                  actionLabel = 'Dispatched';
+                                }
+                              }
+
                               return Card(
                                 child: ListTile(
                                   leading: CircleAvatar(
@@ -71,7 +96,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                   ),
                                   title: Text(t.medicineName ?? 'Medicine #${t.medicineId}'),
                                   subtitle: Text(
-                                    '${isIn ? "Received" : "Sold"} ${t.quantity} units\n${Helpers.formatDate(t.createdAt)}',
+                                    '$actionLabel ${t.quantity} units\n${Helpers.formatDate(t.createdAt)}',
                                   ),
                                   trailing: Text(
                                     isIn ? '+${t.quantity}' : '-${t.quantity}',

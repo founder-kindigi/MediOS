@@ -3,8 +3,26 @@ import '../constants/app_colors.dart';
 import '../constants/app_dimensions.dart';
 
 class ShimmerSkeleton extends StatefulWidget {
-  final Widget child;
-  const ShimmerSkeleton({super.key, required this.child});
+  final Widget? child;
+  final double? width;
+  final double? height;
+  final double? borderRadius;
+
+  const ShimmerSkeleton({
+    super.key,
+    this.child,
+    this.width,
+    this.height,
+    this.borderRadius,
+  });
+
+  factory ShimmerSkeleton.circle({required double radius}) {
+    return ShimmerSkeleton(
+      width: radius * 2,
+      height: radius * 2,
+      borderRadius: radius,
+    );
+  }
 
   @override
   State<ShimmerSkeleton> createState() => _ShimmerSkeletonState();
@@ -31,6 +49,17 @@ class _ShimmerSkeletonState extends State<ShimmerSkeleton>
 
   @override
   Widget build(BuildContext context) {
+    final shimmerChild = widget.child ?? Container(
+      width: widget.width,
+      height: widget.height,
+      decoration: BoxDecoration(
+        color: AppColors.shimmerBase,
+        borderRadius: widget.borderRadius != null
+            ? BorderRadius.circular(widget.borderRadius!)
+            : BorderRadius.circular(AppDimensions.radiusSm),
+      ),
+    );
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -53,7 +82,7 @@ class _ShimmerSkeletonState extends State<ShimmerSkeleton>
           child: child,
         );
       },
-      child: widget.child,
+      child: shimmerChild,
     );
   }
 }

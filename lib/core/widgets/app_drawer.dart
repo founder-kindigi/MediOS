@@ -7,7 +7,8 @@ import '../../features/auth/services/auth_service.dart';
 
 class AppDrawer extends StatelessWidget {
   final void Function(int tabIndex)? onTabSelected;
-  const AppDrawer({super.key, this.onTabSelected});
+  final void Function(String route)? onNavigationRequested;
+  const AppDrawer({super.key, this.onTabSelected, this.onNavigationRequested});
 
   @override
   Widget build(BuildContext context) {
@@ -80,9 +81,15 @@ class AppDrawer extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg, vertical: AppDimensions.sm),
               child: TextButton.icon(
-                onPressed: () {
-                  auth.logout();
-                  Navigator.of(context).pushNamedAndRemoveUntil(AppRouter.login, (route) => false);
+                onPressed: () async {
+                  try {
+                    await auth.logout();
+                  } catch (e) {
+                    // Suppress error to ensure navigation runs
+                  }
+                  if (context.mounted) {
+                    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(AppRouter.login, (route) => false);
+                  }
                 },
                 icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: AppDimensions.iconMd),
                 label: const Text('Logout', style: TextStyle(color: AppColors.error)),
@@ -119,7 +126,11 @@ class AppDrawer extends StatelessWidget {
           if (tabIndex != null && onTabSelected != null) {
             onTabSelected!(tabIndex);
           } else if (route != null) {
-            Navigator.pushNamed(context, route);
+            if (onNavigationRequested != null) {
+              onNavigationRequested!(route);
+            } else {
+              Navigator.pushNamed(context, route);
+            }
           }
         },
       ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import '../../lib/features/auth/screens/login_screen.dart';
-import '../../lib/features/auth/services/auth_service.dart';
+import 'package:medios/features/auth/screens/login_screen.dart';
+import 'package:medios/features/auth/services/auth_service.dart';
 import 'widget_test_helper.dart';
 
 Widget buildApp(MockAuthService mockAuth) {
@@ -41,28 +41,28 @@ void main() {
     await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Enter username'), findsOneWidget);
+    expect(find.text('Username is required'), findsOneWidget);
     expect(find.text('Enter password'), findsOneWidget);
   });
 
   testWidgets('calls auth service on valid form submission', (tester) async {
     await tester.pumpWidget(buildApp(mockAuth));
 
-    await tester.enterText(find.byType(TextFormField).first, 'admin');
-    await tester.enterText(find.byType(TextFormField).last, 'admin123');
+    await tester.enterText(find.byType(TextFormField).first, 'test_user');
+    await tester.enterText(find.byType(TextFormField).last, 'TestPassword@123');
     await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
 
-    expect(mockAuth.lastLoginUsername, 'admin');
-    expect(mockAuth.lastLoginPassword, 'admin123');
+    expect(mockAuth.lastLoginUsername, 'test_user');
+    expect(mockAuth.lastLoginPassword, 'TestPassword@123');
   });
 
   testWidgets('shows error message on failed login', (tester) async {
     mockAuth.setLoginResult(false);
     await tester.pumpWidget(buildApp(mockAuth));
 
-    await tester.enterText(find.byType(TextFormField).first, 'admin');
-    await tester.enterText(find.byType(TextFormField).last, 'wrong');
+    await tester.enterText(find.byType(TextFormField).first, 'test_user');
+    await tester.enterText(find.byType(TextFormField).last, 'wrongpassword');
     await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
 
@@ -72,8 +72,8 @@ void main() {
   testWidgets('shows loading indicator while logging in', (tester) async {
     await tester.pumpWidget(buildApp(mockAuth));
 
-    await tester.enterText(find.byType(TextFormField).first, 'admin');
-    await tester.enterText(find.byType(TextFormField).last, 'admin123');
+    await tester.enterText(find.byType(TextFormField).first, 'test_user');
+    await tester.enterText(find.byType(TextFormField).last, 'TestPassword@123');
     await tester.tap(find.text('Login'));
     await tester.pump();
 

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:get_it/get_it.dart';
 import '../services/auth_service.dart';
 import '../services/biometric_auth_service.dart';
 import '../../../routes/app_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/security/input_validator.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,7 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _biometricAuth = BiometricAuthService();
+  final _biometricAuth = GetIt.instance<BiometricAuthService>();
   bool _obscurePassword = true;
   bool _biometricAvailable = false;
   bool _enableBiometric = false;
@@ -63,21 +65,30 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _error = null);
 
     final auth = context.read<AuthService>();
-    final success = await auth.login(
+    final result = await auth.login(
       _usernameController.text.trim(),
       _passwordController.text,
     );
 
     if (!mounted) return;
 
-    if (success) {
+    if (result.isSuccess) {
       if (_enableBiometric) {
-        await _biometricAuth.enable(_usernameController.text.trim());
+        try {
+          await _biometricAuth.enable(_usernameController.text.trim());
+        } catch (e) {
+          debugPrint('Failed to enable biometric during login: $e');
+        }
       }
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, AppRouter.dashboard);
+    } else if (result.isRateLimited) {
+      final rateLimitedResult = result as LoginRateLimited;
+      final minutes = rateLimitedResult.seconds ~/ 60;
+      final seconds = rateLimitedResult.seconds % 60;
+      setState(() => _error = 'Too many attempts. Try again in ${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}');
     } else {
-      setState(() => _error = 'Invalid username or password');
+      setState(() => _error = result.errorMessage ?? 'Invalid username or password');
     }
   }
 
@@ -123,7 +134,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       textInputAction: TextInputAction.next,
                       onChanged: (_) => _formKey.currentState?.validate(),
-                      validator: (v) => v == null || v.trim().isEmpty ? 'Enter username' : null,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Username is required';
+                        if (!InputValidator.isValidUsername(v)) {
+                          return 'Username must be 3-30 characters (letters, numbers, underscores)';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                   const SizedBox(height: 16),

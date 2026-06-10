@@ -1,8 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:get_it/get_it.dart';
 import '../test_helper.dart';
-import '../../lib/features/sales/services/sales_service.dart';
-import '../../lib/models/sale_model.dart';
+import 'package:medios/features/sales/services/sales_service.dart';
+import 'package:medios/models/sale_model.dart';
+import 'package:medios/models/user_model.dart';
+import 'package:medios/features/auth/services/permission_service.dart';
 
 void main() {
   late Database db;
@@ -10,7 +13,31 @@ void main() {
 
   setUp(() async {
     db = await createAndSetTestDb();
+    
+    // Set up active user with permissions
+    final permissionService = GetIt.instance<PermissionService>();
+    await permissionService.setCurrentUser(UserModel(
+      id: 1,
+      username: 'test_admin',
+      fullName: 'Test Admin',
+      role: 'admin',
+      passwordHash: '',
+    ));
+
     sales = SalesService();
+    
+    // Insert test medicine
+    await db.insert('medicines', {
+      'id': 1,
+      'name': 'Panadol',
+      'generic_name': 'Paracetamol',
+      'category_id': 1,
+      'stock_quantity': 100,
+      'purchase_price': 80,
+      'selling_price': 100,
+      'created_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    });
   });
 
   tearDown(() async {

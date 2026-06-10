@@ -9,6 +9,7 @@ import '../../../core/widgets/responsive_wrapper.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
 import '../../../core/services/invoice_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 class SalesScreen extends StatefulWidget {
   const SalesScreen({super.key});
@@ -77,7 +78,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                   style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                             ],
                           ),
-                          onTap: () => _showSaleDetail(sale.id!),
+                          onTap: sale.id == null ? null : () => _showSaleDetail(sale.id!),
                         ),
                       ),
                     );
@@ -133,12 +134,28 @@ class _SalesScreenState extends State<SalesScreen> {
                     IconButton(
                       icon: const Icon(Icons.print, color: AppColors.primary),
                       tooltip: 'Print Invoice',
-                      onPressed: () => InvoiceService().printInvoice(sale),
+                      onPressed: () async {
+                        try {
+                          await InvoiceService().printInvoice(sale);
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppSnackbar.showError(context, 'Failed to print invoice: $e');
+                          }
+                        }
+                      },
                     ),
                     IconButton(
                       icon: const Icon(Icons.share, color: AppColors.primary),
                       tooltip: 'Share Invoice',
-                      onPressed: () => InvoiceService().shareInvoice(sale),
+                      onPressed: () async {
+                        try {
+                          await InvoiceService().shareInvoice(sale);
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppSnackbar.showError(context, 'Failed to share invoice: $e');
+                          }
+                        }
+                      },
                     ),
                   ],
                 ),
