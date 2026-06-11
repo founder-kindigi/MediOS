@@ -23,6 +23,8 @@ jobs:
   android-build:
     if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'android'
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Force Node.js 24
     
     steps:
       - uses: actions/checkout@v4
@@ -58,6 +60,8 @@ jobs:
   windows-build:
     if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'windows'
     runs-on: windows-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Force Node.js 24
     
     steps:
       - uses: actions/checkout@v4
@@ -84,6 +88,8 @@ jobs:
   web-build:
     if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'web'
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Force Node.js 24
     
     steps:
       - uses: actions/checkout@v4
