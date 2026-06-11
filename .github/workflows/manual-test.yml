@@ -23,8 +23,6 @@ jobs:
   android-build:
     if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'android'
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Force Node.js 24
     
     steps:
       - uses: actions/checkout@v4
@@ -47,8 +45,23 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
           
-      - name: Build Android APK
-        run: flutter build apk --release --split-per-abi
+      - name: Accept Android licenses
+        run: yes | sdkmanager --licenses || echo "License acceptance attempted"
+        
+      - name: Build Android APK (with debug)
+        run: |
+          echo "=== Building Android APK ==="
+          flutter build apk --release --split-per-abi --verbose 2>&1 | tee build.log
+          
+          if [ $? -ne 0 ]; then
+            echo "❌ Build failed!"
+            echo "Last 50 lines of build log:"
+            tail -50 build.log
+            echo "Errors found:"
+            grep -i "error\|fail\|exception" build.log | head -20
+            exit 1
+          fi
+          echo "✅ Build successful!"
         
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -60,8 +73,6 @@ jobs:
   windows-build:
     if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'windows'
     runs-on: windows-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Force Node.js 24
     
     steps:
       - uses: actions/checkout@v4
@@ -88,8 +99,6 @@ jobs:
   web-build:
     if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'web'
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Force Node.js 24
     
     steps:
       - uses: actions/checkout@v4
