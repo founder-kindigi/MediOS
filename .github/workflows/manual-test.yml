@@ -20,21 +20,9 @@ on:
         type: string
 
 jobs:
-  build-selected:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - platform: android
-            os: ubuntu-latest
-          - platform: windows
-            os: windows-latest
-          - platform: web
-            os: ubuntu-latest
-        exclude:
-          - platform: ${{ github.event.inputs.platform != 'all' && github.event.inputs.platform != 'android' && 'android' || '' }}
-          - platform: ${{ github.event.inputs.platform != 'all' && github.event.inputs.platform != 'windows' && 'windows' || '' }}
-          - platform: ${{ github.event.inputs.platform != 'all' && github.event.inputs.platform != 'web' && 'web' || '' }}
+  android-build:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'android'
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
@@ -48,30 +36,73 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
         
-      - name: Setup platform-specific tools
-        run: |
-          if [ "${{ matrix.platform }}" = "android" ]; then
-            sudo apt-get update
-            sudo apt-get install -y openjdk-17-jdk
-            yes | sdkmanager --licenses
-          fi
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
           
-      - name: Build ${{ matrix.platform }}
-        run: |
-          if [ "${{ matrix.platform }}" = "android" ]; then
-            flutter build apk --release --split-per-abi
-          elif [ "${{ matrix.platform }}" = "windows" ]; then
-            flutter build windows --release
-          elif [ "${{ matrix.platform }}" = "web" ]; then
-            flutter build web --release
-          fi
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
           
-      - name: Upload build artifacts
+      - name: Build Android APK
+        run: flutter build apk --release --split-per-abi
+        
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-build-${{ github.event.inputs.version }}
-          path: |
-            ${{ matrix.platform == 'android' && 'build/app/outputs/flutter-apk/' || '' }}
-            ${{ matrix.platform == 'windows' && 'build/windows/runner/Release/' || '' }}
-            ${{ matrix.platform == 'web' && 'build/web/' || '' }}
+          name: android-apk-${{ github.event.inputs.version }}
+          path: build/app/outputs/flutter-apk/
+          retention-days: 30
+
+  windows-build:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'windows'
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+          
+      - name: Install dependencies
+        run: flutter pub get
+        
+      - name: Build Windows
+        run: flutter build windows --release
+        
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-app-${{ github.event.inputs.version }}
+          path: build/windows/runner/Release/
+          retention-days: 30
+
+  web-build:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'web'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+          
+      - name: Install dependencies
+        run: flutter pub get
+        
+      - name: Build Web
+        run: flutter build web --release
+        
+      - name: Upload Web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-app-${{ github.event.inputs.version }}
+          path: build/web/
           retention-days: 30
