@@ -2,10 +2,10 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import '../../models/sale_model.dart';
+import '../../domain/entities/sale.dart';
 
 class InvoiceService {
-  Future<Uint8List> generateInvoice(SaleModel sale) async {
+  Future<Uint8List> generateInvoice(Sale sale) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -41,7 +41,7 @@ class InvoiceService {
           pw.TableHelper.fromTextArray(
             headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             headers: ['Item', 'Qty', 'Price', 'Total'],
-            data: (sale.items ?? []).map((item) => [
+            data: (sale.items).map((item) => [
               item.medicineName ?? 'Item',
               '${item.quantity}',
               _formatCurrency(item.unitPrice),
@@ -94,14 +94,14 @@ class InvoiceService {
     return pdf.save();
   }
 
-  Future<void> printInvoice(SaleModel sale) async {
+  Future<void> printInvoice(Sale sale) async {
     final pdf = await generateInvoice(sale);
     await Printing.layoutPdf(
       onLayout: (_) => pdf,
     );
   }
 
-  Future<void> shareInvoice(SaleModel sale) async {
+  Future<void> shareInvoice(Sale sale) async {
     final pdf = await generateInvoice(sale);
     await Printing.sharePdf(
       bytes: pdf,

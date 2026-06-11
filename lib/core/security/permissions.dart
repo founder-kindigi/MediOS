@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 /// Application permissions enum.
 /// Each permission corresponds to a specific action in the system.
-@immutable
 enum AppPermission {
   // Sales permissions
   canCreateSale,

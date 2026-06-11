@@ -7,8 +7,8 @@ import '../../../core/errors/app_error.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/security/permissions.dart';
 import '../../../features/auth/services/permission_service.dart';
-import '../models/customer_credit.dart';
-import '../services/customer_credit_service.dart';
+import '../../../domain/entities/customer.dart';
+import '../../../presentation/providers/customer_provider.dart';
 
 class CustomerCreditScreen extends StatefulWidget {
   const CustomerCreditScreen({super.key});
@@ -18,10 +18,9 @@ class CustomerCreditScreen extends StatefulWidget {
 }
 
 class _CustomerCreditScreenState extends State<CustomerCreditScreen> {
-  final CustomerCreditService _creditService = GetIt.instance<CustomerCreditService>();
   final PermissionService _permissionService = GetIt.instance<PermissionService>();
   
-  List<CustomerCredit> _customerCredits = [];
+  List<CustomerCreditSummary> _customerCredits = [];
   List<CreditTransaction> _recentTransactions = [];
   bool _isLoading = true;
   String _searchQuery = '';
@@ -43,8 +42,9 @@ class _CustomerCreditScreenState extends State<CustomerCreditScreen> {
       // Check permission
       _permissionService.checkPermission(AppPermission.canManageCustomerCredit);
 
-      final credits = await _creditService.getAllCustomerCredits();
-      final transactions = await _creditService.getRecentTransactions(limit: 20);
+      final customerProvider = context.read<CustomerProvider>();
+      final credits = await customerProvider.getAllCustomerCredits();
+      final transactions = await customerProvider.getRecentTransactions(limit: 20);
       
       // Calculate totals
       double outstanding = 0;
@@ -140,7 +140,7 @@ class _CustomerCreditScreenState extends State<CustomerCreditScreen> {
 
       final amount = double.parse(amountController.text);
       
-      await _creditService.recordPayment(
+      await context.read<CustomerProvider>().recordPayment(
         customerId: customerId,
         amount: amount,
         paymentMethod: 'cash',
@@ -163,7 +163,7 @@ class _CustomerCreditScreenState extends State<CustomerCreditScreen> {
   }
 
   Future<void> _updateCreditLimit(int customerId, String customerName, double currentLimit) async {
-    final limitController = TextEditingController(text: currentLimit.toStringAsFixed(2));
+    final limitController = TextEditingController(text: currentLimit.toString());
     final formKey = GlobalKey<FormState>();
 
     try {
@@ -183,16 +183,18 @@ class _CustomerCreditScreenState extends State<CustomerCreditScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Credit Limit',
                     prefixText: 'Rs ',
-                    helperText: 'Maximum credit allowed for this customer',
+                    helperText: 'Set to 0 for unlimited credit',
                   ),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter credit limit';
+                      return 'Please enter limit';
                     }
-                    final limit = double.tryParse(value);
-                    if (limit == null || limit < 0) {
-                      return 'Please enter a valid amount';
+                    if (double.tryParse(value) == null) {
+                      return 'Please enter a valid number';
+                    }
+                    if (double.parse(value) < 0) {
+                      return 'Limit cannot be negative';
                     }
                     return null;
                   },
@@ -202,7 +204,7 @@ class _CustomerCreditScreenState extends State<CustomerCreditScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
@@ -221,7 +223,7 @@ class _CustomerCreditScreenState extends State<CustomerCreditScreen> {
 
       final newLimit = double.parse(limitController.text);
       
-      await _creditService.updateCreditLimit(
+      await context.read<CustomerProvider>().updateCreditLimit(
         customerId,
         newLimit,
       );
@@ -249,7 +251,7 @@ class _CustomerCreditScreenState extends State<CustomerCreditScreen> {
     );
   }
 
-  List<CustomerCredit> get _filteredCredits {
+  List<CustomerCreditSummary> get _filteredCredits {
     if (_searchQuery.isEmpty) {
       return _customerCredits;
     }
@@ -673,10 +675,8 @@ class CustomerLedgerScreen extends StatefulWidget {
 }
 
 class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
-  final CustomerCreditService _creditService = GetIt.instance<CustomerCreditService>();
-  
   List<CreditTransaction> _transactions = [];
-  CustomerCredit? _creditInfo;
+  CustomerCreditSummary? _creditInfo;
   bool _isLoading = true;
 
   @override
@@ -691,8 +691,9 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
         _isLoading = true;
       });
 
-      final creditInfo = await _creditService.getCustomerCredit(widget.customerId);
-      final transactions = await _creditService.getCustomerTransactions(widget.customerId);
+      final customerProvider = context.read<CustomerProvider>();
+      final creditInfo = await customerProvider.getCustomerCredit(widget.customerId);
+      final transactions = await customerProvider.getCustomerTransactions(widget.customerId);
       
       setState(() {
         _creditInfo = creditInfo;

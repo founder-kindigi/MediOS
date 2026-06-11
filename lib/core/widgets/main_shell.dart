@@ -34,9 +34,9 @@ import '../../features/orders/screens/new_order_screen.dart';
 import '../../features/returns/screens/new_return_screen.dart';
 import '../../features/returns/screens/returns_history_screen.dart';
 import '../../models/medicine_model.dart';
-import '../../models/customer_model.dart';
-import '../../models/supplier_model.dart';
 import '../../routes/app_transitions.dart';
+import '../../domain/entities/customer.dart';
+import '../../domain/entities/supplier.dart';
 
 
 class MainShell extends StatefulWidget {
@@ -217,11 +217,11 @@ class _MainShellState extends State<MainShell> {
       case AppRouter.suppliers:
         return buildRoute(settings, const SuppliersScreen());
       case AppRouter.supplierDetail:
-        return buildRoute(settings, SupplierDetailScreen(supplier: args as SupplierModel));
+        return buildRoute(settings, SupplierDetailScreen(supplier: args as Supplier));
       case AppRouter.customers:
         return buildRoute(settings, const CustomersScreen());
       case AppRouter.customerDetail:
-        return buildRoute(settings, CustomerDetailScreen(customer: args as CustomerModel));
+        return buildRoute(settings, CustomerDetailScreen(customer: args as Customer));
       case AppRouter.transactions:
         return buildRoute(settings, const TransactionHistoryScreen());
       case AppRouter.reports:

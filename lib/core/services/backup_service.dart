@@ -248,7 +248,7 @@ class BackupService {
       }
       
       return BackupValidation.valid(metadata);
-    } catch (e, stackTrace) {
+    } catch (e) {
       return BackupValidation.invalid('Validation error: $e');
     }
   }

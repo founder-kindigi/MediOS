@@ -3,7 +3,7 @@ import 'package:sqflite_common/utils/utils.dart' show firstIntValue;
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart' show getApplicationDocumentsDirectory;
 import 'package:bcrypt/bcrypt.dart';
-import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter/foundation.dart' show compute, debugPrint;
 import '../../constants/app_constants.dart' show AppConstants;
 import '../../errors/app_error.dart';
 
@@ -211,7 +211,7 @@ class DatabaseHelper {
       }
     } catch (e) {
       // Log error but don't fail migration
-      print('Error initializing customer balances: $e');
+      debugPrint('Error initializing customer balances: $e');
     }
   }
 

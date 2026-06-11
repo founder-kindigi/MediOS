@@ -4,6 +4,12 @@ import 'package:get_it/get_it.dart';
 import 'core/database/database_helper.dart';
 import 'core/di/service_locator.dart';
 import 'core/services/seed_data_service.dart';
+import 'presentation/providers/medicine_provider.dart';
+import 'presentation/providers/customer_provider.dart';
+import 'presentation/providers/supplier_provider.dart';
+import 'presentation/providers/sales_provider.dart';
+import 'domain/entities/customer.dart';
+import 'domain/entities/supplier.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/theme_provider.dart';
@@ -52,8 +58,6 @@ import 'features/returns/screens/new_return_screen.dart';
 import 'features/returns/screens/returns_history_screen.dart';
 import 'features/returns/services/return_service.dart';
 import 'models/medicine_model.dart';
-import 'models/customer_model.dart';
-import 'models/supplier_model.dart';
 import 'routes/app_router.dart';
 import 'routes/app_transitions.dart';
 
@@ -127,6 +131,10 @@ class MediOSApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SalesService()),
         ChangeNotifierProvider(create: (_) => SupplierService()),
         ChangeNotifierProvider(create: (_) => CustomerService()),
+        ChangeNotifierProvider(create: (_) => GetIt.instance<MedicineProvider>()),
+        ChangeNotifierProvider(create: (_) => GetIt.instance<CustomerProvider>()),
+        ChangeNotifierProvider(create: (_) => GetIt.instance<SupplierProvider>()),
+        ChangeNotifierProvider(create: (_) => GetIt.instance<SalesProvider>()),
         ChangeNotifierProvider(create: (_) => DashboardService()),
         ChangeNotifierProvider(create: (_) => PurchaseOrderService()),
         ChangeNotifierProvider(create: (_) => ReportsService()),
@@ -216,11 +224,11 @@ class MediOSApp extends StatelessWidget {
                 case AppRouter.suppliers:
                   return buildRoute(settings, const SuppliersScreen());
                 case AppRouter.supplierDetail:
-                  return buildRoute(settings, SupplierDetailScreen(supplier: args as SupplierModel));
+                  return buildRoute(settings, SupplierDetailScreen(supplier: args as Supplier));
                 case AppRouter.customers:
                   return buildRoute(settings, const CustomersScreen());
                 case AppRouter.customerDetail:
-                  return buildRoute(settings, CustomerDetailScreen(customer: args as CustomerModel));
+                  return buildRoute(settings, CustomerDetailScreen(customer: args as Customer));
                 case AppRouter.transactions:
                   return buildRoute(settings, const TransactionHistoryScreen());
                 case AppRouter.reports:

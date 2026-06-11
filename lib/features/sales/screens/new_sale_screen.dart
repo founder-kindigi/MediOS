@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/sales_service.dart';
+import '../../../presentation/providers/sales_provider.dart';
 import '../../inventory/services/inventory_service.dart';
 import '../../settings/services/settings_service.dart';
-import '../../../models/sale_model.dart';
+import '../../../domain/entities/sale.dart' as domain;
 import '../../../models/medicine_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../models/prescription_model.dart';
 import '../../../core/utils/helpers.dart';
-import '../../customers/services/customer_service.dart';
+import '../../../presentation/providers/customer_provider.dart';
 
 class NewSaleScreen extends StatefulWidget {
   const NewSaleScreen({super.key});
@@ -35,7 +35,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CustomerService>().loadCustomers();
+      context.read<CustomerProvider>().loadCustomers();
       context.read<InventoryService>().loadMedicines();
       final settings = context.read<SettingsService>();
       setState(() {
@@ -144,11 +144,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       return;
     }
 
-    final salesService = context.read<SalesService>();
+    final salesProvider = context.read<SalesProvider>();
     final inventoryService = context.read<InventoryService>();
 
     final billNumber = 'BILL-${DateTime.now().millisecondsSinceEpoch}';
-    final sale = SaleModel(
+    final sale = domain.Sale(
       billNumber: billNumber,
       customerId: _selectedCustomerId,
       customerName: _customerName,
@@ -157,12 +157,13 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       tax: _tax,
       netAmount: _netAmount,
       paymentMethod: _paymentMethod,
-      notes: [_noteCtrl.text.isNotEmpty ? _noteCtrl.text : null,
+      notes: [
+        _noteCtrl.text.isNotEmpty ? _noteCtrl.text : null,
         if (_couponCode.isNotEmpty) 'Coupon: $_couponCode (-${Helpers.formatCurrency(_couponDiscount)})',
       ].whereType<String>().join(' | '),
     );
 
-    final items = _items.map((i) => SaleItemModel(
+    final items = _items.map((i) => domain.SaleItem(
       medicineId: i.medicineId,
       medicineName: i.medicineName,
       quantity: i.quantity,
@@ -171,7 +172,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     )).toList();
 
     try {
-      await salesService.createSale(sale, items);
+      await salesProvider.createSale(sale, items);
       
       // Reload the local medicines cache since stock has changed
       await inventoryService.loadMedicines();
@@ -190,7 +191,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   @override
   Widget build(BuildContext context) {
     final inventory = context.watch<InventoryService>();
-    final customers = context.watch<CustomerService>().customers;
+    final customers = context.watch<CustomerProvider>().allCustomers;
     final searchResults = _searchCtrl.text.isNotEmpty
         ? inventory.searchMedicines(_searchCtrl.text)
             .where((m) => !m.isExpired)
@@ -298,7 +299,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                 },
                               ),
                               Text('${item.quantity}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                               IconButton(
+                              IconButton(
                                 icon: const Icon(Icons.add_circle_outline, size: 20),
                                 onPressed: () {
                                   final medicine = inventory.medicines.firstWhere((m) => m.id == item.medicineId);

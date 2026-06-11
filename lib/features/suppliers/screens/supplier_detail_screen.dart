@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../models/supplier_model.dart';
+import '../../../domain/entities/supplier.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
 import '../../purchase_orders/services/purchase_order_service.dart';
 
 class SupplierDetailScreen extends StatefulWidget {
-  final SupplierModel supplier;
+  final Supplier supplier;
   const SupplierDetailScreen({super.key, required this.supplier});
 
   @override

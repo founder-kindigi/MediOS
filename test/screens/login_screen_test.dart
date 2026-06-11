@@ -11,6 +11,9 @@ Widget buildApp(MockAuthService mockAuth) {
       ChangeNotifierProvider<AuthService>.value(value: mockAuth),
     ],
     child: MaterialApp(
+      theme: ThemeData(
+        splashFactory: NoSplash.splashFactory,
+      ),
       home: const LoginScreen(),
       routes: {'/dashboard': (_) => const Scaffold(body: Text('Dashboard'))},
     ),

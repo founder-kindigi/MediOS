@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../models/customer_model.dart';
+import '../../../domain/entities/customer.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
-import '../../sales/services/sales_service.dart';
+import '../../../presentation/providers/sales_provider.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
-  final CustomerModel customer;
+  final Customer customer;
   const CustomerDetailScreen({super.key, required this.customer});
 
   @override
@@ -27,9 +27,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       if (mounted) setState(() => _sales = []);
       return;
     }
-    final salesService = context.read<SalesService>();
+    final salesProvider = context.read<SalesProvider>();
     try {
-      final customerSales = await salesService.getSalesByCustomer(widget.customer.id!);
+      final customerSales = await salesProvider.getSalesByCustomer(widget.customer.id!);
       if (mounted) setState(() => _sales = customerSales);
     } catch (e) {
       if (mounted) {
