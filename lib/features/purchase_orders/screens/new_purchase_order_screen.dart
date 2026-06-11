@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/purchase_order_service.dart';
-import '../../inventory/services/inventory_service.dart';
-import '../../suppliers/services/supplier_service.dart';
-import '../../../models/purchase_order_model.dart';
-import '../../../models/medicine_model.dart';
+import '../../../presentation/providers/purchase_order_provider.dart';
+import '../../../presentation/providers/medicine_provider.dart';
+import '../../../presentation/providers/supplier_provider.dart';
+import '../../../domain/entities/purchase_order.dart';
+import '../../../domain/entities/medicine.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
@@ -19,7 +19,7 @@ class NewPurchaseOrderScreen extends StatefulWidget {
 class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
   final _searchCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
-  List<PurchaseItem> _items = [];
+  final List<PurchaseItem> _items = [];
   int? _selectedSupplierId;
   String? _selectedSupplierName;
 
@@ -27,8 +27,8 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SupplierService>().loadSuppliers();
-      context.read<InventoryService>().loadMedicines();
+      context.read<SupplierProvider>().loadSuppliers();
+      context.read<MedicineProvider>().loadMedicines();
     });
   }
 
@@ -41,7 +41,7 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
 
   double get _totalAmount => _items.fold(0, (sum, item) => sum + item.total);
 
-  void _addItem(MedicineModel medicine) {
+  void _addItem(Medicine medicine) {
     setState(() {
       final existing = _items.where((i) => i.medicineId == medicine.id).firstOrNull;
       if (existing != null) {
@@ -68,17 +68,20 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
       return;
     }
 
-    final poService = context.read<PurchaseOrderService>();
+    final poProvider = context.read<PurchaseOrderProvider>();
 
-    final order = PurchaseOrderModel(
+    final order = PurchaseOrder(
       supplierId: _selectedSupplierId,
       supplierName: _selectedSupplierName,
       orderNumber: Helpers.generateOrderNumber(),
       totalAmount: _totalAmount,
+      status: 'pending',
       notes: _noteCtrl.text.isNotEmpty ? _noteCtrl.text : null,
+      orderDate: DateTime.now(),
+      createdAt: DateTime.now(),
     );
 
-    final items = _items.map((i) => PurchaseOrderItemModel(
+    final items = _items.map((i) => PurchaseOrderItem(
       medicineId: i.medicineId,
       medicineName: i.medicineName,
       quantity: i.quantity,
@@ -87,7 +90,7 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
     )).toList();
 
     try {
-      await poService.createOrder(order, items);
+      await poProvider.createOrder(order, items);
       if (mounted) {
         AppSnackbar.showSuccess(context, 'Order placed - ${order.orderNumber}');
         Navigator.pop(context);
@@ -101,11 +104,14 @@ class _NewPurchaseOrderScreenState extends State<NewPurchaseOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final inventory = context.watch<InventoryService>();
-    final suppliers = context.watch<SupplierService>().suppliers;
-    final searchResults = _searchCtrl.text.isNotEmpty
-        ? inventory.searchMedicines(_searchCtrl.text)
-        : <MedicineModel>[];
+    final medicineProvider = context.watch<MedicineProvider>();
+    final suppliers = context.watch<SupplierProvider>().suppliers;
+    final query = _searchCtrl.text.toLowerCase();
+    final searchResults = query.isNotEmpty
+        ? medicineProvider.allMedicines.where((m) =>
+            m.name.toLowerCase().contains(query) ||
+            m.genericName.toLowerCase().contains(query)).toList()
+        : <Medicine>[];
 
     return Scaffold(
       appBar: AppBar(title: const Text('New Purchase Order')),

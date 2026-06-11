@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/return_service.dart';
+import '../../../presentation/providers/return_provider.dart';
+import '../../../domain/entities/return.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
@@ -18,31 +19,31 @@ class _ReturnsHistoryScreenState extends State<ReturnsHistoryScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ReturnService>().loadReturns();
+      context.read<ReturnProvider>().loadReturns();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final retService = context.watch<ReturnService>();
+    final retProvider = context.watch<ReturnProvider>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Returns History')),
-      body: retService.isLoading
+      body: retProvider.isLoading
           ? const ShimmerList()
-          : retService.returns.isEmpty
+          : retProvider.returns.isEmpty
               ? EmptyStateWidget(
                   icon: Icons.replay_rounded,
                   title: 'No returns processed yet',
                   subtitle: 'Process a return from the sales screen',
                 )
               : RefreshIndicator(
-                  onRefresh: () => retService.loadReturns(),
+                  onRefresh: () => retProvider.loadReturns(),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: retService.returns.length,
+                    itemCount: retProvider.returns.length,
                     itemBuilder: (context, index) {
-                      final ret = retService.returns[index];
+                      final ret = retProvider.returns[index];
                       return Card(
                         child: ListTile(
                           leading: CircleAvatar(
@@ -72,8 +73,8 @@ class _ReturnsHistoryScreenState extends State<ReturnsHistoryScreen> {
   }
 
   void _showReturnDetail(int returnId) async {
-    final retService = context.read<ReturnService>();
-    final ret = await retService.getReturnWithItems(returnId);
+    final retProvider = context.read<ReturnProvider>();
+    final ret = await retProvider.getReturnWithItems(returnId);
     if (!mounted || ret == null) return;
 
     showModalBottomSheet(

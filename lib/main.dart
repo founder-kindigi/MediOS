@@ -8,6 +8,10 @@ import 'presentation/providers/medicine_provider.dart';
 import 'presentation/providers/customer_provider.dart';
 import 'presentation/providers/supplier_provider.dart';
 import 'presentation/providers/sales_provider.dart';
+import 'presentation/providers/purchase_order_provider.dart';
+import 'presentation/providers/return_provider.dart';
+import 'presentation/providers/customer_order_provider.dart';
+import 'presentation/providers/prescription_provider.dart';
 import 'domain/entities/customer.dart';
 import 'domain/entities/supplier.dart';
 import 'core/services/notification_service.dart';
@@ -41,7 +45,6 @@ import 'features/customers/screens/customer_detail_screen.dart';
 import 'features/customers/services/customer_service.dart';
 import 'features/purchase_orders/screens/purchase_orders_screen.dart';
 import 'features/purchase_orders/screens/new_purchase_order_screen.dart';
-import 'features/purchase_orders/services/purchase_order_service.dart';
 import 'features/reports/screens/reports_screen.dart';
 import 'features/reports/services/reports_service.dart';
 import 'features/settings/screens/settings_screen.dart';
@@ -50,13 +53,10 @@ import 'features/stores/screens/store_list_screen.dart';
 import 'features/stores/services/store_service.dart';
 import 'features/prescriptions/screens/prescription_list_screen.dart';
 import 'features/prescriptions/screens/new_prescription_screen.dart';
-import 'features/prescriptions/services/prescription_service.dart';
 import 'features/orders/screens/order_list_screen.dart';
 import 'features/orders/screens/new_order_screen.dart';
-import 'features/orders/services/order_service.dart';
 import 'features/returns/screens/new_return_screen.dart';
 import 'features/returns/screens/returns_history_screen.dart';
-import 'features/returns/services/return_service.dart';
 import 'models/medicine_model.dart';
 import 'routes/app_router.dart';
 import 'routes/app_transitions.dart';
@@ -136,12 +136,12 @@ class MediOSApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => GetIt.instance<SupplierProvider>()),
         ChangeNotifierProvider(create: (_) => GetIt.instance<SalesProvider>()),
         ChangeNotifierProvider(create: (_) => DashboardService()),
-        ChangeNotifierProvider(create: (_) => PurchaseOrderService()),
+        ChangeNotifierProvider(create: (_) => GetIt.instance<PurchaseOrderProvider>()),
         ChangeNotifierProvider(create: (_) => ReportsService()),
-        ChangeNotifierProvider(create: (_) => ReturnService()),
+        ChangeNotifierProvider(create: (_) => GetIt.instance<ReturnProvider>()),
         ChangeNotifierProvider(create: (_) => GetIt.instance<StoreService>()),
-        ChangeNotifierProvider(create: (_) => PrescriptionService()),
-        ChangeNotifierProvider(create: (_) => OrderService()),
+        ChangeNotifierProvider(create: (_) => GetIt.instance<PrescriptionProvider>()),
+        ChangeNotifierProvider(create: (_) => GetIt.instance<CustomerOrderProvider>()),
         ChangeNotifierProvider(create: (_) => SettingsService()),
         ChangeNotifierProvider(create: (_) => GetIt.instance<PermissionService>()),
       ],

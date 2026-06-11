@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/prescription_service.dart';
-import '../../inventory/services/inventory_service.dart';
-import '../../../models/prescription_model.dart';
-import '../../../models/medicine_model.dart';
+import '../../../presentation/providers/prescription_provider.dart';
+import '../../../presentation/providers/medicine_provider.dart';
+import '../../../domain/entities/prescription.dart';
+import '../../../domain/entities/medicine.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_snackbar.dart';
 
@@ -48,7 +48,7 @@ class _NewPrescriptionScreenState extends State<NewPrescriptionScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<InventoryService>().loadMedicines();
+      context.read<MedicineProvider>().loadMedicines();
     });
   }
 
@@ -62,7 +62,7 @@ class _NewPrescriptionScreenState extends State<NewPrescriptionScreen> {
     super.dispose();
   }
 
-  void _addMedicine(MedicineModel med) {
+  void _addMedicine(Medicine med) {
     setState(() {
       final existing = _items.where((i) => i.medicineId == med.id).firstOrNull;
       if (existing != null) {
@@ -80,13 +80,14 @@ class _NewPrescriptionScreenState extends State<NewPrescriptionScreen> {
       return;
     }
     try {
-      final service = context.read<PrescriptionService>();
-      await service.createPrescription(PrescriptionModel(
+      final service = context.read<PrescriptionProvider>();
+      await service.createPrescription(Prescription(
         patientName: _patientCtrl.text.trim(),
         patientPhone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
         doctorName: _doctorCtrl.text.trim().isEmpty ? null : _doctorCtrl.text.trim(),
         prescriptionDate: DateTime.now(),
         notes: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+        createdAt: DateTime.now(),
         items: _items.map((i) => PrescriptionItem(
           medicineId: i.medicineId,
           medicineName: i.medicineName,
@@ -109,9 +110,9 @@ class _NewPrescriptionScreenState extends State<NewPrescriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final inv = context.watch<InventoryService>();
+    final inv = context.watch<MedicineProvider>();
     final searchResults = _searchCtrl.text.isEmpty
-        ? <MedicineModel>[]
+        ? <Medicine>[]
         : inv.medicines.where((m) =>
             m.name.toLowerCase().contains(_searchCtrl.text.toLowerCase())).take(10).toList();
 

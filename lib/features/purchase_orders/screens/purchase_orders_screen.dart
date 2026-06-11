@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/purchase_order_service.dart';
+import '../../../presentation/providers/purchase_order_provider.dart';
+import '../../../domain/entities/purchase_order.dart';
 import '../../../core/constants/app_colors.dart';
-
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../routes/app_router.dart';
-import '../../inventory/services/inventory_service.dart';
+import '../../../presentation/providers/medicine_provider.dart';
 
 class PurchaseOrdersScreen extends StatefulWidget {
   const PurchaseOrdersScreen({super.key});
@@ -22,24 +22,23 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PurchaseOrderService>().loadOrders();
+      context.read<PurchaseOrderProvider>().loadOrders();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final poService = context.watch<PurchaseOrderService>();
+    final poProvider = context.watch<PurchaseOrderProvider>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Purchase Orders')),
-
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.pushNamed(context, AppRouter.newPurchaseOrder),
         child: const Icon(Icons.add),
       ),
-      body: poService.isLoading
+      body: poProvider.isLoading
           ? const ShimmerList()
-          : poService.orders.isEmpty
+          : poProvider.orders.isEmpty
               ? EmptyStateWidget(
                   icon: Icons.receipt_long_rounded,
                   title: 'No purchase orders yet',
@@ -48,12 +47,12 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
                   onAction: () => Navigator.pushNamed(context, AppRouter.newPurchaseOrder),
                 )
               : RefreshIndicator(
-                  onRefresh: () => poService.loadOrders(),
+                  onRefresh: () => poProvider.loadOrders(),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: poService.orders.length,
+                    itemCount: poProvider.orders.length,
                     itemBuilder: (context, index) {
-                      final order = poService.orders[index];
+                      final order = poProvider.orders[index];
                       return Card(
                         child: ListTile(
                           leading: CircleAvatar(
@@ -94,8 +93,8 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
   }
 
   void _showOrderDetail(int orderId) async {
-    final poService = context.read<PurchaseOrderService>();
-    final order = await poService.getOrderWithItems(orderId);
+    final poProvider = context.read<PurchaseOrderProvider>();
+    final order = await poProvider.getOrderWithItems(orderId);
     if (!mounted || order == null) return;
 
     showModalBottomSheet(
@@ -142,9 +141,9 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
                   OutlinedButton(
                     onPressed: () async {
                       try {
-                        await poService.updateStatus(order.id!, 'received');
+                        await poProvider.updateStatus(order.id!, 'received');
                         if (context.mounted) {
-                          context.read<InventoryService>().loadMedicines();
+                          context.read<MedicineProvider>().refreshMedicines();
                           AppSnackbar.showSuccess(context, 'Order marked as received');
                           Navigator.pop(context);
                         }
@@ -161,9 +160,9 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
                   OutlinedButton(
                     onPressed: () async {
                       try {
-                        await poService.updateStatus(order.id!, 'cancelled');
+                        await poProvider.updateStatus(order.id!, 'cancelled');
                         if (context.mounted) {
-                          context.read<InventoryService>().loadMedicines();
+                          context.read<MedicineProvider>().refreshMedicines();
                           AppSnackbar.showWarning(context, 'Purchase order cancelled');
                           Navigator.pop(context);
                         }

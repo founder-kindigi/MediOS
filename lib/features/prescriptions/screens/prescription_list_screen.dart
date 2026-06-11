@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/prescription_service.dart';
+import '../../../presentation/providers/prescription_provider.dart';
+import '../../../domain/entities/prescription.dart';
 import '../../../core/constants/app_colors.dart';
 
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_router.dart';
-import '../../../models/prescription_model.dart';
 
 class PrescriptionListScreen extends StatefulWidget {
   const PrescriptionListScreen({super.key});
@@ -23,13 +23,13 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PrescriptionService>().loadPrescriptions();
+      context.read<PrescriptionProvider>().loadPrescriptions();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final service = context.watch<PrescriptionService>();
+    final service = context.watch<PrescriptionProvider>();
     final filtered = _filter == 'all'
         ? service.prescriptions
         : service.prescriptions.where((p) => p.status == _filter).toList();
@@ -74,7 +74,7 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                         actionLabel: _filter != 'all' ? null : 'New Prescription',
                         onAction: _filter != 'all' ? null : () => Navigator.pushNamed(context, '/prescriptions/new').then((_) {
                           if (mounted) {
-                            context.read<PrescriptionService>().loadPrescriptions();
+                            context.read<PrescriptionProvider>().loadPrescriptions();
                           }
                         }),
                       )
@@ -92,7 +92,7 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
                               title: Text(p.patientName, style: const TextStyle(fontWeight: FontWeight.w600)),
                               subtitle: Text(
                                 '${p.doctorName != null ? 'Dr. ${p.doctorName} · ' : ''}'
-                                '${p.items?.length ?? 0} items',
+                                '${p.items.length} items',
                               ),
                               trailing: Chip(
                                 label: Text(p.isExpired && p.status == 'active' ? 'expired' : p.status, style: const TextStyle(fontSize: 11, color: Colors.white)),
@@ -128,24 +128,24 @@ class _PrescriptionListScreenState extends State<PrescriptionListScreen> {
     }
   }
 
-  void _showDetail(PrescriptionModel p) {
+  void _showDetail(Prescription p) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => _PrescriptionDetailSheet(prescription: p, service: context.read<PrescriptionService>()),
+      builder: (ctx) => _PrescriptionDetailSheet(prescription: p, service: context.read<PrescriptionProvider>()),
     );
   }
 }
 
 class _PrescriptionDetailSheet extends StatelessWidget {
-  final PrescriptionModel prescription;
-  final PrescriptionService service;
+  final Prescription prescription;
+  final PrescriptionProvider service;
 
   const _PrescriptionDetailSheet({required this.prescription, required this.service});
 
   @override
   Widget build(BuildContext context) {
-    final items = prescription.items ?? [];
+    final items = prescription.items;
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
       minChildSize: 0.3,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/order_service.dart';
-import '../../inventory/services/inventory_service.dart';
-import '../../customers/services/customer_service.dart';
-import '../../../models/customer_order_model.dart';
-import '../../../models/medicine_model.dart';
+import '../../../presentation/providers/customer_order_provider.dart';
+import '../../../presentation/providers/medicine_provider.dart';
+import '../../../presentation/providers/customer_provider.dart';
+import '../../../domain/entities/customer_order.dart';
+import '../../../domain/entities/medicine.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -47,8 +47,8 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CustomerService>().loadCustomers();
-      context.read<InventoryService>().loadMedicines();
+      context.read<CustomerProvider>().loadCustomers();
+      context.read<MedicineProvider>().loadMedicines();
     });
   }
 
@@ -61,7 +61,7 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
 
   double get _total => _items.fold(0, (sum, i) => sum + i.total);
 
-  void _addItem(MedicineModel med) {
+  void _addItem(Medicine med) {
     if (med.stockQuantity <= 0) {
       AppSnackbar.showError(
         context,
@@ -91,16 +91,17 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
       AppSnackbar.showError(context, 'Add at least one item');
       return;
     }
-    final service = context.read<OrderService>();
+    final provider = context.read<CustomerOrderProvider>();
     try {
-      await service.createOrder(CustomerOrderModel(
+      await provider.createOrder(CustomerOrder(
         customerId: _selectedCustomerId,
         customerName: _customerName,
-        orderNumber: OrderService.generateOrderNumber(),
+        orderNumber: Helpers.generateOrderNumber(),
         orderDate: DateTime.now(),
         totalAmount: _total,
         notes: _noteCtrl.text.isNotEmpty ? _noteCtrl.text : null,
-        items: _items.map((i) => CustomerOrderItemModel(
+        createdAt: DateTime.now(),
+        items: _items.map((i) => CustomerOrderItem(
           medicineId: i.medicineId,
           medicineName: i.medicineName,
           quantity: i.quantity,
@@ -121,13 +122,14 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final inv = context.watch<InventoryService>();
-    final customers = context.watch<CustomerService>().customers;
-    final searchResults = _searchCtrl.text.isNotEmpty
-        ? inv.searchMedicines(_searchCtrl.text)
-            .where((m) => !m.isExpired)
+    final medicineProvider = context.watch<MedicineProvider>();
+    final customers = context.watch<CustomerProvider>().customers;
+    final query = _searchCtrl.text.toLowerCase();
+    final searchResults = query.isNotEmpty
+        ? medicineProvider.allMedicines
+            .where((m) => !m.isExpired && (m.name.toLowerCase().contains(query) || m.genericName.toLowerCase().contains(query)))
             .toList()
-        : <MedicineModel>[];
+        : <Medicine>[];
 
     return Scaffold(
       appBar: AppBar(title: const Text('New Order')),
@@ -201,7 +203,7 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
                               IconButton(
                                 icon: const Icon(Icons.add_circle_outline, size: 20),
                                 onPressed: () {
-                                  final medicine = inv.medicines.firstWhere((m) => m.id == item.medicineId);
+                                  final medicine = medicineProvider.allMedicines.firstWhere((m) => m.id == item.medicineId);
                                   if (item.quantity >= medicine.stockQuantity) {
                                     AppSnackbar.showError(
                                       context,
@@ -229,7 +231,7 @@ class _NewOrderScreenState extends State<NewOrderScreen> {
                 Row(
                   children: [
                     const Spacer(),
-                    Text('Total: ', style: const TextStyle(fontSize: 16)),
+                    const Text('Total: ', style: TextStyle(fontSize: 16)),
                     Text(Helpers.formatCurrency(_total), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
                   ],
                 ),

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/return_service.dart';
-import '../../sales/services/sales_service.dart';
-import '../../inventory/services/inventory_service.dart';
-import '../../../models/return_model.dart';
-import '../../../models/sale_model.dart';
+import '../../../presentation/providers/return_provider.dart';
+import '../../../presentation/providers/sales_provider.dart';
+import '../../../presentation/providers/medicine_provider.dart';
+import '../../../domain/entities/return.dart' as domain;
+import '../../../domain/entities/sale.dart' as domain;
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -19,7 +19,7 @@ class NewReturnScreen extends StatefulWidget {
 class _NewReturnScreenState extends State<NewReturnScreen> {
   final _searchCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
-  SaleModel? _selectedSale;
+  domain.Sale? _selectedSale;
   Map<int, int> _returnQtys = {};
   String _reason = 'damaged';
   bool _processing = false;
@@ -30,7 +30,7 @@ class _NewReturnScreenState extends State<NewReturnScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SalesService>().loadSales();
+      context.read<SalesProvider>().loadSales();
     });
   }
 
@@ -60,14 +60,14 @@ class _NewReturnScreenState extends State<NewReturnScreen> {
 
     setState(() => _processing = true);
 
-    final returnService = context.read<ReturnService>();
-    final inventory = context.read<InventoryService>();
+    final returnProvider = context.read<ReturnProvider>();
+    final medicineProvider = context.read<MedicineProvider>();
 
-    final items = <ReturnItemModel>[];
+    final items = <domain.ReturnItem>[];
     for (final saleItem in _selectedSale!.items) {
       final qty = _returnQtys[saleItem.medicineId] ?? 0;
       if (qty > 0) {
-        items.add(ReturnItemModel(
+        items.add(domain.ReturnItem(
           medicineId: saleItem.medicineId,
           medicineName: saleItem.medicineName,
           quantity: qty,
@@ -77,18 +77,20 @@ class _NewReturnScreenState extends State<NewReturnScreen> {
       }
     }
 
-    final ret = ReturnModel(
+    final ret = domain.Return(
       saleId: _selectedSale!.id,
       billNumber: _selectedSale!.billNumber,
-      returnNumber: 'R${_selectedSale!.billNumber.replaceAll('BILL', '')}',
+      returnNumber: 'R${_selectedSale!.billNumber.replaceAll('BILL-', '').replaceAll('BILL', '')}',
       totalRefund: _totalRefund,
       reason: _reason,
       notes: _noteCtrl.text.isNotEmpty ? _noteCtrl.text : null,
+      returnDate: DateTime.now(),
+      createdAt: DateTime.now(),
     );
 
     try {
-      await returnService.processReturn(ret, items);
-      await inventory.loadMedicines();
+      await returnProvider.processReturn(ret, items);
+      await medicineProvider.refreshMedicines();
 
       if (mounted) {
         AppSnackbar.showSuccess(
@@ -110,8 +112,8 @@ class _NewReturnScreenState extends State<NewReturnScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final salesService = context.watch<SalesService>();
-    final matchingSales = salesService.sales
+    final salesProvider = context.watch<SalesProvider>();
+    final matchingSales = salesProvider.sales
         .where((s) => _searchCtrl.text.isEmpty ||
             s.billNumber.toLowerCase().contains(_searchCtrl.text.toLowerCase()))
         .toList();
@@ -259,7 +261,8 @@ class _NewReturnScreenState extends State<NewReturnScreen> {
   }
 
   void _selectSale(int saleId) async {
-    final sale = await context.read<SalesService>().getSaleWithItems(saleId);
+    final salesProvider = context.read<SalesProvider>();
+    final sale = await salesProvider.getSaleWithItems(saleId);
     if (sale != null && mounted) {
       setState(() {
         _selectedSale = sale;

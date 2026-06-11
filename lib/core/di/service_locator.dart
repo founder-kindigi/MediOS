@@ -14,6 +14,10 @@ import '../../domain/repositories/medicine_repository.dart';
 import '../../domain/repositories/customer_repository.dart';
 import '../../domain/repositories/supplier_repository.dart';
 import '../../domain/repositories/sale_repository.dart';
+import '../../domain/repositories/purchase_order_repository.dart';
+import '../../domain/repositories/return_repository.dart';
+import '../../domain/repositories/customer_order_repository.dart';
+import '../../domain/repositories/prescription_repository.dart';
 
 // Data Sources & Repository Implementations
 import '../../data/datasources/local/medicine_local_data_source.dart';
@@ -28,17 +32,37 @@ import '../../data/repositories/supplier_repository_impl.dart';
 import '../../data/datasources/local/sale_local_data_source.dart';
 import '../../data/repositories/sale_repository_impl.dart';
 
+import '../../data/datasources/local/purchase_order_local_data_source.dart';
+import '../../data/repositories/purchase_order_repository_impl.dart';
+
+import '../../data/datasources/local/return_local_data_source.dart';
+import '../../data/repositories/return_repository_impl.dart';
+
+import '../../data/datasources/local/customer_order_local_data_source.dart';
+import '../../data/repositories/customer_order_repository_impl.dart';
+
+import '../../data/datasources/local/prescription_local_data_source.dart';
+import '../../data/repositories/prescription_repository_impl.dart';
+
 // Use Cases
 import '../../domain/usecases/medicine_usecases.dart';
 import '../../domain/usecases/customer_usecases.dart';
 import '../../domain/usecases/supplier_usecases.dart';
 import '../../domain/usecases/sale_usecases.dart';
+import '../../domain/usecases/purchase_order_usecases.dart';
+import '../../domain/usecases/return_usecases.dart';
+import '../../domain/usecases/customer_order_usecases.dart';
+import '../../domain/usecases/prescription_usecases.dart';
 
 // Presentation Providers
 import '../../presentation/providers/medicine_provider.dart';
 import '../../presentation/providers/customer_provider.dart';
 import '../../presentation/providers/supplier_provider.dart';
 import '../../presentation/providers/sales_provider.dart';
+import '../../presentation/providers/purchase_order_provider.dart';
+import '../../presentation/providers/return_provider.dart';
+import '../../presentation/providers/customer_order_provider.dart';
+import '../../presentation/providers/prescription_provider.dart';
 
 // Features (legacy services - to be refactored)
 import '../../features/auth/services/auth_service.dart';
@@ -68,6 +92,18 @@ void setupServiceLocator() {
   getIt.registerLazySingleton<SaleLocalDataSource>(
     () => SaleLocalDataSource(databaseHelper: getIt<DatabaseHelper>()),
   );
+  getIt.registerLazySingleton<PurchaseOrderLocalDataSource>(
+    () => PurchaseOrderLocalDataSource(getIt<DatabaseHelper>()),
+  );
+  getIt.registerLazySingleton<ReturnLocalDataSource>(
+    () => ReturnLocalDataSource(getIt<DatabaseHelper>()),
+  );
+  getIt.registerLazySingleton<CustomerOrderLocalDataSource>(
+    () => CustomerOrderLocalDataSource(getIt<DatabaseHelper>()),
+  );
+  getIt.registerLazySingleton<PrescriptionLocalDataSource>(
+    () => PrescriptionLocalDataSource(getIt<DatabaseHelper>()),
+  );
   
   // Repositories
   getIt.registerLazySingleton<MedicineRepository>(
@@ -90,6 +126,30 @@ void setupServiceLocator() {
   getIt.registerLazySingleton<SaleRepository>(
     () => SaleRepositoryImpl(
       localDataSource: getIt<SaleLocalDataSource>(),
+      permissionService: getIt<PermissionService>(),
+    ),
+  );
+  getIt.registerLazySingleton<PurchaseOrderRepository>(
+    () => PurchaseOrderRepositoryImpl(
+      localDataSource: getIt<PurchaseOrderLocalDataSource>(),
+      permissionService: getIt<PermissionService>(),
+    ),
+  );
+  getIt.registerLazySingleton<ReturnRepository>(
+    () => ReturnRepositoryImpl(
+      localDataSource: getIt<ReturnLocalDataSource>(),
+      permissionService: getIt<PermissionService>(),
+    ),
+  );
+  getIt.registerLazySingleton<CustomerOrderRepository>(
+    () => CustomerOrderRepositoryImpl(
+      localDataSource: getIt<CustomerOrderLocalDataSource>(),
+      permissionService: getIt<PermissionService>(),
+    ),
+  );
+  getIt.registerLazySingleton<PrescriptionRepository>(
+    () => PrescriptionRepositoryImpl(
+      localDataSource: getIt<PrescriptionLocalDataSource>(),
       permissionService: getIt<PermissionService>(),
     ),
   );
@@ -207,6 +267,68 @@ void setupServiceLocator() {
     () => GetTodaySalesSummaryUseCase(repository: getIt<SaleRepository>()),
   );
 
+  // Purchase Order Use Cases
+  getIt.registerLazySingleton<LoadPurchaseOrdersUseCase>(
+    () => LoadPurchaseOrdersUseCase(getIt<PurchaseOrderRepository>()),
+  );
+  getIt.registerLazySingleton<GetOrdersBySupplierUseCase>(
+    () => GetOrdersBySupplierUseCase(getIt<PurchaseOrderRepository>()),
+  );
+  getIt.registerLazySingleton<CreatePurchaseOrderUseCase>(
+    () => CreatePurchaseOrderUseCase(getIt<PurchaseOrderRepository>()),
+  );
+  getIt.registerLazySingleton<GetPurchaseOrderWithItemsUseCase>(
+    () => GetPurchaseOrderWithItemsUseCase(getIt<PurchaseOrderRepository>()),
+  );
+  getIt.registerLazySingleton<UpdatePurchaseOrderStatusUseCase>(
+    () => UpdatePurchaseOrderStatusUseCase(getIt<PurchaseOrderRepository>()),
+  );
+  getIt.registerLazySingleton<DeletePurchaseOrderUseCase>(
+    () => DeletePurchaseOrderUseCase(getIt<PurchaseOrderRepository>()),
+  );
+
+  // Return Use Cases
+  getIt.registerLazySingleton<LoadReturnsUseCase>(
+    () => LoadReturnsUseCase(getIt<ReturnRepository>()),
+  );
+  getIt.registerLazySingleton<ProcessReturnUseCase>(
+    () => ProcessReturnUseCase(getIt<ReturnRepository>()),
+  );
+  getIt.registerLazySingleton<GetReturnWithItemsUseCase>(
+    () => GetReturnWithItemsUseCase(getIt<ReturnRepository>()),
+  );
+  getIt.registerLazySingleton<GetTotalReturnsUseCase>(
+    () => GetTotalReturnsUseCase(getIt<ReturnRepository>()),
+  );
+
+  // Customer Order Use Cases
+  getIt.registerLazySingleton<LoadCustomerOrdersUseCase>(
+    () => LoadCustomerOrdersUseCase(getIt<CustomerOrderRepository>()),
+  );
+  getIt.registerLazySingleton<GetCustomerOrderWithItemsUseCase>(
+    () => GetCustomerOrderWithItemsUseCase(getIt<CustomerOrderRepository>()),
+  );
+  getIt.registerLazySingleton<CreateCustomerOrderUseCase>(
+    () => CreateCustomerOrderUseCase(getIt<CustomerOrderRepository>()),
+  );
+  getIt.registerLazySingleton<UpdateCustomerOrderStatusUseCase>(
+    () => UpdateCustomerOrderStatusUseCase(getIt<CustomerOrderRepository>()),
+  );
+
+  // Prescription Use Cases
+  getIt.registerLazySingleton<LoadPrescriptionsUseCase>(
+    () => LoadPrescriptionsUseCase(getIt<PrescriptionRepository>()),
+  );
+  getIt.registerLazySingleton<CreatePrescriptionUseCase>(
+    () => CreatePrescriptionUseCase(getIt<PrescriptionRepository>()),
+  );
+  getIt.registerLazySingleton<UpdatePrescriptionStatusUseCase>(
+    () => UpdatePrescriptionStatusUseCase(getIt<PrescriptionRepository>()),
+  );
+  getIt.registerLazySingleton<GetPrescriptionByIdUseCase>(
+    () => GetPrescriptionByIdUseCase(getIt<PrescriptionRepository>()),
+  );
+
   // Presentation Providers
   getIt.registerFactory<MedicineProvider>(
     () => MedicineProvider(
@@ -259,6 +381,48 @@ void setupServiceLocator() {
       createSale: getIt<CreateSaleUseCase>(),
       getSaleWithItems: getIt<GetSaleWithItemsUseCase>(),
       getTodaySummary: getIt<GetTodaySalesSummaryUseCase>(),
+      storeService: getIt<StoreService>(),
+    ),
+  );
+
+  getIt.registerFactory<PurchaseOrderProvider>(
+    () => PurchaseOrderProvider(
+      loadOrdersUseCase: getIt<LoadPurchaseOrdersUseCase>(),
+      getOrdersBySupplierUseCase: getIt<GetOrdersBySupplierUseCase>(),
+      createOrderUseCase: getIt<CreatePurchaseOrderUseCase>(),
+      getOrderWithItemsUseCase: getIt<GetPurchaseOrderWithItemsUseCase>(),
+      updateStatusUseCase: getIt<UpdatePurchaseOrderStatusUseCase>(),
+      deleteOrderUseCase: getIt<DeletePurchaseOrderUseCase>(),
+      storeService: getIt<StoreService>(),
+    ),
+  );
+  
+  getIt.registerFactory<ReturnProvider>(
+    () => ReturnProvider(
+      loadReturnsUseCase: getIt<LoadReturnsUseCase>(),
+      processReturnUseCase: getIt<ProcessReturnUseCase>(),
+      getReturnWithItemsUseCase: getIt<GetReturnWithItemsUseCase>(),
+      getTotalReturnsUseCase: getIt<GetTotalReturnsUseCase>(),
+      storeService: getIt<StoreService>(),
+    ),
+  );
+
+  getIt.registerFactory<CustomerOrderProvider>(
+    () => CustomerOrderProvider(
+      loadOrdersUseCase: getIt<LoadCustomerOrdersUseCase>(),
+      getOrderWithItemsUseCase: getIt<GetCustomerOrderWithItemsUseCase>(),
+      createOrderUseCase: getIt<CreateCustomerOrderUseCase>(),
+      updateStatusUseCase: getIt<UpdateCustomerOrderStatusUseCase>(),
+      storeService: getIt<StoreService>(),
+    ),
+  );
+
+  getIt.registerFactory<PrescriptionProvider>(
+    () => PrescriptionProvider(
+      loadPrescriptionsUseCase: getIt<LoadPrescriptionsUseCase>(),
+      createPrescriptionUseCase: getIt<CreatePrescriptionUseCase>(),
+      updateStatusUseCase: getIt<UpdatePrescriptionStatusUseCase>(),
+      getPrescriptionByIdUseCase: getIt<GetPrescriptionByIdUseCase>(),
       storeService: getIt<StoreService>(),
     ),
   );

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/order_service.dart';
+import '../../../presentation/providers/customer_order_provider.dart';
+import '../../../domain/entities/customer_order.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
-
 import '../../../core/widgets/shimmer_skeleton.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/app_snackbar.dart';
-import '../../../models/customer_order_model.dart';
-import '../../inventory/services/inventory_service.dart';
+import '../../../presentation/providers/medicine_provider.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -24,16 +23,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<OrderService>().loadOrders();
+      context.read<CustomerOrderProvider>().loadOrders();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final service = context.watch<OrderService>();
+    final provider = context.watch<CustomerOrderProvider>();
     final filtered = _filter == 'all'
-        ? service.orders
-        : service.orders.where((o) => o.status == _filter).toList();
+        ? provider.orders
+        : provider.orders.where((o) => o.status == _filter).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -42,12 +41,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => Navigator.pushNamed(context, '/orders/new').then((_) {
-              service.loadOrders();
+              provider.loadOrders();
             }),
           ),
         ],
       ),
-
       body: Column(
         children: [
           Padding(
@@ -62,7 +60,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
             ),
           ),
           Expanded(
-            child: service.isLoading
+            child: provider.isLoading
                 ? const ShimmerList()
                 : filtered.isEmpty
                     ? EmptyStateWidget(
@@ -72,7 +70,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                         actionLabel: _filter != 'all' ? null : 'New Order',
                         onAction: _filter != 'all' ? null : () => Navigator.pushNamed(context, '/orders/new').then((_) {
                           if (mounted) {
-                            context.read<OrderService>().loadOrders();
+                            context.read<CustomerOrderProvider>().loadOrders();
                           }
                         }),
                       )
@@ -88,7 +86,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                 child: Icon(Icons.receipt_long, color: _statusColor(o.status), size: 20),
                               ),
                               title: Text(o.orderNumber, style: const TextStyle(fontWeight: FontWeight.w600)),
-                              subtitle: Text('${o.customerName ?? "Walk-in"} · ${Helpers.formatCurrency(o.totalAmount)} · ${o.items?.length ?? 0} items'),
+                              subtitle: Text('${o.customerName ?? "Walk-in"} · ${Helpers.formatCurrency(o.totalAmount)} · ${o.items.length} items'),
                               trailing: Chip(
                                 label: Text(o.status, style: const TextStyle(fontSize: 11, color: Colors.white)),
                                 backgroundColor: _statusColor(o.status),
@@ -122,24 +120,24 @@ class _OrderListScreenState extends State<OrderListScreen> {
     }
   }
 
-  void _showDetail(CustomerOrderModel order) {
+  void _showDetail(CustomerOrder order) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => _OrderDetailSheet(order: order, service: context.read<OrderService>()),
+      builder: (ctx) => _OrderDetailSheet(order: order, provider: context.read<CustomerOrderProvider>()),
     );
   }
 }
 
 class _OrderDetailSheet extends StatelessWidget {
-  final CustomerOrderModel order;
-  final OrderService service;
+  final CustomerOrder order;
+  final CustomerOrderProvider provider;
 
-  const _OrderDetailSheet({required this.order, required this.service});
+  const _OrderDetailSheet({required this.order, required this.provider});
 
   @override
   Widget build(BuildContext context) {
-    final items = order.items ?? [];
+    final items = order.items;
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
       minChildSize: 0.3,
@@ -184,9 +182,9 @@ class _OrderDetailSheet extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () async {
                         try {
-                          await service.updateStatus(order.id!, 'fulfilled');
+                          await provider.updateStatus(order.id!, 'fulfilled');
                           if (ctx.mounted) {
-                            context.read<InventoryService>().loadMedicines();
+                            context.read<MedicineProvider>().refreshMedicines();
                             AppSnackbar.showSuccess(context, 'Order fulfilled');
                             Navigator.pop(ctx);
                           }
@@ -206,9 +204,9 @@ class _OrderDetailSheet extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () async {
                         try {
-                          await service.updateStatus(order.id!, 'cancelled');
+                          await provider.updateStatus(order.id!, 'cancelled');
                           if (ctx.mounted) {
-                            context.read<InventoryService>().loadMedicines();
+                            context.read<MedicineProvider>().refreshMedicines();
                             AppSnackbar.showWarning(context, 'Order cancelled');
                             Navigator.pop(ctx);
                           }
@@ -224,6 +222,12 @@ class _OrderDetailSheet extends StatelessWidget {
                   ),
                 ],
               ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+              ],
+            ),
           ],
         ),
       ),
