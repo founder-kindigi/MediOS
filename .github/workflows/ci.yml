@@ -54,7 +54,7 @@ jobs:
         
       - name: Upload coverage if available
         uses: codecov/codecov-action@v4
-        if: success() || failure()  # Run even if tests fail
+        if: always()
         with:
           file: ./coverage/lcov.info
 
