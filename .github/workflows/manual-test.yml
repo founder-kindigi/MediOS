@@ -48,20 +48,26 @@ jobs:
       - name: Accept Android licenses
         run: yes | sdkmanager --licenses || echo "License acceptance attempted"
         
-      - name: Build Android APK (with debug)
+      - name: Build Android APK (with fallback)
         run: |
-          echo "=== Building Android APK ==="
-          flutter build apk --release --split-per-abi --verbose 2>&1 | tee build.log
+          echo "=== Android Build Attempt ==="
+          echo "Note: If this fails, web testing is still available"
+          flutter clean
+          flutter pub get
           
-          if [ $? -ne 0 ]; then
-            echo "❌ Build failed!"
-            echo "Last 50 lines of build log:"
-            tail -50 build.log
-            echo "Errors found:"
-            grep -i "error\|fail\|exception" build.log | head -20
+          # Try regular build
+          flutter build apk --release --split-per-abi --verbose || {
+            echo "❌ Standard build failed, trying debug build..."
+            flutter build apk --debug --verbose || {
+              echo "❌ All Android builds failed"
+              echo "This is expected if Android SDK is not fully configured"
+              echo "Web testing can proceed independently"
+              exit 1
+            }
+            echo "⚠️ Debug build succeeded (release failed)"
             exit 1
-          fi
-          echo "✅ Build successful!"
+          }
+          echo "✅ Release build successful!"
         
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

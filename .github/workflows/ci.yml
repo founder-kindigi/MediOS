@@ -87,39 +87,67 @@ jobs:
       - name: Accept Android licenses
         run: yes | sdkmanager --licenses || echo "License acceptance may have failed, continuing..."
         
-      - name: Build Android APK (with debug info)
+      - name: Build Android APK (with comprehensive debug)
         run: |
           echo "=== Android Build Debug Info ==="
-          echo "Flutter version:"
+          echo "1. Flutter version:"
           flutter --version
           echo ""
-          echo "Flutter doctor:"
+          echo "2. Flutter doctor (check Android setup):"
           flutter doctor -v
           echo ""
-          echo "Java version:"
+          echo "3. Java version:"
           java -version
           echo ""
-          echo "Android SDK components:"
-          sdkmanager --list || echo "sdkmanager not available"
+          echo "4. Check Android SDK:"
+          which sdkmanager || echo "sdkmanager not in PATH"
           echo ""
-          echo "=== Building APK ==="
-          # Build with debug output
-          flutter build apk --release --split-per-abi --verbose 2>&1 | tee build.log
+          echo "5. List available Android components:"
+          sdkmanager --list 2>/dev/null | head -50 || echo "Cannot list SDK components"
+          echo ""
+          echo "6. Check Android licenses:"
+          yes | sdkmanager --licenses 2>&1 | tail -10 || echo "License check failed"
+          echo ""
+          echo "7. Check build directory structure:"
+          ls -la build/ || echo "No build directory"
+          echo ""
+          echo "=== Attempting Build ==="
+          # Try building with detailed output
+          set -x  # Enable command tracing
+          flutter clean
+          flutter pub get
+          flutter build apk --release --split-per-abi --verbose
+          BUILD_STATUS=$?
+          set +x
           
-          # Check if build succeeded
-          if [ $? -ne 0 ]; then
-            echo "❌ Build failed, checking log..."
-            grep -i "error\|fail\|exception" build.log | head -20
-            echo "Full build log saved to build.log"
+          echo "=== Build Result: $BUILD_STATUS ==="
+          if [ $BUILD_STATUS -eq 0 ]; then
+            echo "✅ Build successful!"
+            echo "APK files created:"
+            find build/app/outputs/flutter-apk/ -name "*.apk" 2>/dev/null || echo "No APK files found"
+          else
+            echo "❌ Build failed with exit code: $BUILD_STATUS"
+            echo "Most likely issues:"
+            echo "1. Missing Android SDK components"
+            echo "2. License not accepted"
+            echo "3. Flutter/Android version mismatch"
+            echo "4. Missing build-tools or platform"
+            echo ""
+            echo "Next steps:"
+            echo "1. Check flutter doctor output above"
+            echo "2. Manual testing can continue with web version"
+            echo "3. Android build can be fixed separately"
             exit 1
           fi
-          echo "✅ Build successful!"
         
-      - name: Upload APK artifact
+      - name: Upload APK artifact (if built)
         uses: actions/upload-artifact@v4
+        if: success() || failure()  # Try to upload even if build failed for debugging
         with:
-          name: android-apk
-          path: build/app/outputs/flutter-apk/
+          name: android-build-output
+          path: |
+            build.log
+            build/
           retention-days: 7
 
   windows-build:
@@ -139,14 +167,43 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
         
-      - name: Build Windows
-        run: flutter build windows --release
+      - name: Build Windows (with debug)
+        run: |
+          echo "=== Windows Build Debug ==="
+          echo "1. Flutter version:"
+          flutter --version
+          echo ""
+          echo "2. Flutter doctor (Windows):"
+          flutter doctor -v
+          echo ""
+          echo "3. Visual Studio check:"
+          where msbuild || echo "msbuild not found"
+          echo ""
+          echo "=== Attempting Windows Build ==="
+          flutter clean
+          flutter pub get
+          flutter build windows --release --verbose
+          BUILD_STATUS=$?
+          
+          echo "=== Build Result: $BUILD_STATUS ==="
+          if [ $BUILD_STATUS -eq 0 ]; then
+            echo "✅ Windows build successful!"
+            echo "EXE location:"
+            find build/windows/runner/Release/ -name "*.exe" 2>/dev/null || echo "No EXE found"
+          else
+            echo "❌ Windows build failed"
+            echo "Most likely: Missing Visual Studio or Windows SDK"
+            echo "Manual testing can continue with web version"
+            exit 1
+          fi
         
-      - name: Upload Windows artifact
+      - name: Upload Windows artifact (if built)
         uses: actions/upload-artifact@v4
+        if: success() || failure()
         with:
-          name: windows-app
-          path: build/windows/runner/Release/
+          name: windows-build-output
+          path: |
+            build/
           retention-days: 7
 
   web-build:
